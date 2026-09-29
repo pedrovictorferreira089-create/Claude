@@ -62,7 +62,7 @@ def sabados():
 
 def carregar_planos():
     """Valor por sessão de cada serviço em cada plano vendido (rateio do preço final),
-    com o status do plano e a fração do preço final já paga (parcelas confirmadas)."""
+    com o status do plano e a fração do preço final que não está em atraso (parcelas vencidas e não pagas)."""
     for e in UNIDADES:
         fim = HOJE
         while fim > dt.date(2023, 10, 1):
@@ -84,11 +84,13 @@ def carregar_planos():
             soma = sum(v for lst in liq.values() for v, _ in lst)
             fator = br(p["precoFinal"]) / soma if soma else 0.0
             preco_final = br(p["precoFinal"])
-            pago = sum(br(x["valorLiquido"]) for x in p["parcelas"] if x["confirmado"] == "Sim")
+            vencido = sum(br(x["valorLiquido"]) for x in p["parcelas"]
+                          if x["confirmado"] != "Sim" and x["dataVencimento"]
+                          and dt.datetime.strptime(x["dataVencimento"], "%d/%m/%Y").date() < HOJE)
             valores[p["codOrcamento"]] = {
                 "nome": p["nomePlano"].strip(),
                 "status": p["statusPlano"],
-                "pago": min(pago / preco_final, 1.0) if preco_final else 1.0,
+                "pago": max(1.0 - vencido / preco_final, 0.0) if preco_final else 1.0,
                 "svc": {c: sum(v for v, _ in lst) * fator / sum(q for _, q in lst) for c, lst in liq.items()},
             }
     return valores
@@ -110,8 +112,8 @@ def valorar(a, servico, planos, tabela, avulsos):
         if cheio == 0:
             obs += " – cortesia/100% desconto"
         elif p["pago"] < 1:
-            obs += f" – só {p['pago']:.0%} das parcelas pagas (sessão cheia R$ {cheio:.2f})".replace(".", ",")
-        return tab, val, ("Plano" if p["pago"] >= 1 or cheio == 0 else "Plano parc. pago"), obs
+            obs += f" – {1 - p['pago']:.0%} do plano em parcelas vencidas e não pagas (sessão cheia R$ {cheio:.2f})".replace(".", ",")
+        return tab, val, ("Plano" if p["pago"] >= 1 or cheio == 0 else "Plano c/ atraso"), obs
     if orc:
         return tab, 0.0, "Plano não localizado", f"Plano {orc} não localizado na API – status e pagamento não verificados"
     m = next((x for x in avulsos if x[0] == a["codigoCliente"] and x[1]["desc_item"].strip() == servico), None)
@@ -256,7 +258,7 @@ def montar(atend, faltas, destino):
         "COMO USAR / LEGENDA",
         "• Para incluir outra unidade: cole as linhas dela nas abas 'Atendimentos' e 'Faltas', escrevendo na coluna 'Unidade' exatamente o nome do cabeçalho acima (ex.: Petrópolis). O resumo se atualiza sozinho.",
         "• Para uma unidade nova (fora da lista), troque o nome de um dos cabeçalhos em amarelo da linha 4.",
-        "• Faturado = sessão de plano (só planos Aprovados) = preço final rateado pelas sessões × % do plano já pago (parcelas confirmadas); avulso = valor da venda do dia.",
+        "• Faturado = sessão de plano (só planos Aprovados) = preço final rateado pelas sessões descontada a % do plano em parcelas vencidas e não pagas; avulso = valor da venda do dia.",
         "• Faltas = agendamentos com status 'Falhou' no Belle. Desmarcações não entram na conta.",
     ]
     for i, n in enumerate(notas):
