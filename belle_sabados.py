@@ -18,7 +18,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.table import Table, TableStyleInfo
 
 BASE = "https://app.bellesoftware.com.br/api/release/controller/IntegracaoExterna/v1.0/"
-TOKEN = os.environ.get("BELLE_TOKEN", "409746c0fb619acbe444d0834766505c")
+TOKEN = os.environ.get("BELLE_TOKEN", "")
 CACHE = os.environ.get("BELLE_CACHE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "data"))
 HOJE = dt.date(2026, 9, 29)
 UNIDADES = {1: "Petrópolis", 2: "Lagoa Nova", 3: "Capim Macio", 6: "Norte Shopping", 4: "Laser"}
@@ -89,6 +89,25 @@ def carregar_planos():
     return valores
 
 
+def valorar(a, servico, planos, tabela, avulsos):
+    """Valor faturado de um atendimento: sessão de plano rateada, venda avulsa do dia ou tabela."""
+    cod, orc = str(a["codigoServico"] or ""), a["idOrcamento"]
+    tab = tabela.get(cod)
+    if not cod:
+        return tab, 0.0, "Sem serviço", "Agendamento sem serviço vinculado"
+    if orc and orc in planos and cod in planos[orc]["svc"]:
+        val = planos[orc]["svc"][cod]
+        obs = f"Sessão do plano {orc} ({planos[orc]['nome']})" + (" – cortesia/100% desconto" if val == 0 else "")
+        return tab, val, "Plano", obs
+    if orc:
+        return tab, tab or 0.0, "Tabela", f"Plano {orc} não localizado – usado valor de tabela"
+    m = next((x for x in avulsos if x[0] == a["codigoCliente"] and x[1]["desc_item"].strip() == servico), None)
+    if m:
+        avulsos.remove(m)
+        return tab, br(m[1]["valor_liquido"]), "Avulso", "Venda avulsa registrada no dia"
+    return tab, 0.0, "Avulso s/ venda", "Sem venda registrada no dia (experimental, cortesia ou pago em outra data)"
+
+
 def coletar(estabs):
     tabela = {str(s["codServico"]): br(s["valor"]) for s in api("servico/listar")}
     planos = carregar_planos()
@@ -107,24 +126,8 @@ def coletar(estabs):
                     faltas.append(base)
                 if a["statusAgendamento"] != "Atendido":
                     continue
-                cod, orc = str(a["codigoServico"] or ""), a["idOrcamento"]
-                tab = tabela.get(cod)
-                if not cod:
-                    val, origem, obs = 0.0, "Sem serviço", "Agendamento sem serviço vinculado"
-                elif orc and orc in planos and cod in planos[orc]["svc"]:
-                    val, origem = planos[orc]["svc"][cod], "Plano"
-                    obs = f"Sessão do plano {orc} ({planos[orc]['nome']})"
-                    if val == 0:
-                        obs += " – cortesia/100% desconto"
-                elif orc:
-                    val, origem, obs = tab or 0.0, "Tabela", f"Plano {orc} não localizado – usado valor de tabela"
-                else:
-                    m = next((x for x in avulsos if x[0] == a["codigoCliente"] and x[1]["desc_item"].strip() == base["servico"]), None)
-                    if m:
-                        avulsos.remove(m)
-                        val, origem, obs = br(m[1]["valor_liquido"]), "Avulso", "Venda avulsa registrada no dia"
-                    else:
-                        val, origem, obs = 0.0, "Avulso s/ venda", "Sem venda registrada no dia (experimental, cortesia ou pago em outra data)"
+                tab, val, origem, obs = valorar(a, base["servico"], planos, tabela, avulsos)
+                orc = a["idOrcamento"]
                 atend.append(dict(base, origem=origem, orc=orc or "", tabela=tab, valor=round(val, 2), obs=obs))
     return atend, faltas
 
