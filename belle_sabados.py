@@ -1,6 +1,6 @@
 """Gera planilha de faturamento dos sábados (últimos 90 dias) a partir da API Belle Software.
 
-Uso: python3 belle_sabados.py [codEstab ...]   (padrão: 2 = Lagoa Nova)
+Uso: python3 belle_sabados.py [codEstab ...]   (padrão: todas as unidades)
 Os dados brutos da API ficam em cache em ./data para não estourar o rate limit (40 req/min).
 """
 import datetime as dt
@@ -13,7 +13,6 @@ import urllib.parse
 import urllib.request
 
 from openpyxl import Workbook
-from openpyxl.comments import Comment
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.table import Table, TableStyleInfo
@@ -250,7 +249,6 @@ def montar(atend, faltas, destino):
     for k in range(len(unids)):
         rs.cell(row=r0, column=2 + 3 * k).fill = FILL_IN
         rs.cell(row=r0, column=2 + 3 * k).font = FB
-    rs.cell(row=r0, column=2 + 3 * unids.index("Lagoa Nova")).comment = Comment("Única unidade já preenchida nesta versão.", "Claude")
     larguras(rs, [12] + [11, 14, 8] * (len(unids) + 1) + [26])
     rs.row_dimensions[r0 + 1].height = 28
     rs.freeze_panes = rs.cell(row=r0 + 2, column=2)
@@ -308,11 +306,12 @@ def montar(atend, faltas, destino):
     wsv.cell(row=last + 1, column=5).number_format = "0.0%"
     larguras(wsv, [42, 13, 18, 16, 13])
 
+    wb.calculation.fullCalcOnLoad = True
     wb.save(destino)
 
 
 if __name__ == "__main__":
-    estabs = [int(x) for x in sys.argv[1:]] or [2]
+    estabs = [int(x) for x in sys.argv[1:]] or list(UNIDADES)
     atend, faltas = coletar(estabs)
     out = os.environ.get("BELLE_OUT", "Faturamento_Sabados_Drenesse.xlsx")
     montar(atend, faltas, out)
