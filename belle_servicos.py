@@ -52,7 +52,7 @@ def montar(linhas, ini, fim, destino):
     ws["A1"] = "Drenesse – Serviços realizados, todas as unidades"
     ws["A1"].font = FT
     ws["A2"] = (f"Período: {ini} a {fim} • Somente agendamentos com status 'Atendido' • Fonte: API Belle Software. "
-                "Valor faturado = sessão de plano rateada pelo preço final do plano, ou venda avulsa registrada no dia.")
+                "Valor faturado = sessão de plano Aprovado rateada pelo preço final × % já pago (parcelas confirmadas), ou venda avulsa registrada no dia.")
     ws["A2"].font = FI
     cabecalho(ws, 4, ["#", "Serviço", "Qtd realizada", "Valor faturado (R$)", "Ticket médio (R$)", "% do faturado"])
     last = 4 + len(servs)
