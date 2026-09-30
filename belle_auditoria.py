@@ -194,11 +194,11 @@ def base(ws, cols, dados, fmts, nome_tabela, larg):
 def montar(planos_aud, linhas, agenda, inicio, destino):
     wb = Workbook()
     unids = list(UNIDS.values())
-    N, P = len(linhas) + 1, len(planos_aud) + 1
+    N, P = max(len(linhas), 1) + 1, max(len(planos_aud), 1) + 1  # última linha de cada base (nunca antes da 2)
     meses = sorted({l["mes"] for l in linhas})
     ag = sorted(agenda.items(), key=lambda x: (unids.index(x[0][0]), x[0][1]))
     ag_linhas = sorted({(u, m) for (u, m, _), _ in ag}, key=lambda x: (unids.index(x[0]), x[1]))
-    G = len(ag_linhas) + 1
+    G = max(len(ag_linhas), 1) + 1
 
     def A(c):
         return f"Atendimentos!${c}$2:${c}${N}"
@@ -389,6 +389,9 @@ def montar(planos_aud, linhas, agenda, inicio, destino):
         r += 1
         linha(wv, r, [p["unidade"], p["orc"], p["cliente"], p["venda"], p["validade"], p["meses"], p["plano"], p["vendedor"],
                       p["final"], p["sessoes"], p["restantes"], p["a_realizar"], p["pago"], p["vencido"]], fmv)
+    if not lista:
+        r += 1
+        wv.cell(row=r, column=1, value="Nenhum plano aprovado vence depois de outubro/2027 neste período.").font = FI
     r += 1
     linha(wv, r, ["TOTAL", f"=COUNT(B5:B{r - 1})", "", "", "", "", "", ""] + [f"=SUM({c}5:{c}{r - 1})" for c in "IJKLMN"],
           fmv, total=True)
