@@ -2,7 +2,7 @@
 
 Uso: python3 belle_auditoria.py
 Busca todo o histórico disponível até ontem das unidades Petrópolis, Lagoa Nova, Capim Macio e Norte Shopping
-e gera Auditoria_Precos_Drenesse.xlsx (ou BELLE_OUT). BELLE_DESDE=dd/mm/aaaa limita o início do período.
+e gera Auditoria_Precos_Drenesse.xlsx (ou BELLE_OUT). BELLE_DESDE e BELLE_ATE (dd/mm/aaaa) limitam o período.
 Regras de valor iguais às de belle_sabados.py: sessão de plano Aprovado = preço final rateado pelas sessões,
 descontada a parte do plano em parcelas vencidas e não pagas; avulso = venda registrada no dia.
 """
@@ -78,7 +78,7 @@ def motivo(origem, tab, val):
     return "Sem diferença"
 
 
-def coletar(desde=None):
+def coletar(desde=None, ate=None):
     tabela = {str(s["codServico"]): br(s["valor"]) for s in api("servico/listar")}
     planos = carregar_planos(tabela)
     for e in UNIDS:  # vencimento (validade) de cada plano, do relatório Sessões de Planos
@@ -100,7 +100,7 @@ def coletar(desde=None):
                     (v["cod_cliente"], i) for i in v["itens_venda"] or [] if i["tipo"] == "Serviço")
         for a in sorted(ags, key=lambda x: (data_br(x["dataAgendamento"]), x["horarioAgendamento"] or "")):
             d = data_br(a["dataAgendamento"])
-            if desde and d < desde:
+            if (desde and d < desde) or (ate and d > ate):
                 continue
             agenda[(unidade, d.replace(day=1), a["statusAgendamento"])] += 1
             if a["statusAgendamento"] != "Atendido":
@@ -122,14 +122,14 @@ def coletar(desde=None):
     return tabela, planos, linhas, agenda
 
 
-def auditar_planos(planos, tabela, inicio):
+def auditar_planos(planos, tabela, inicio, fim=ATE):
     """Planos Aprovados vendidos pelas unidades auditadas no período, com desconto, parcelas e saldo de sessões."""
     ordem = {u: i for i, u in enumerate(UNIDS)}
     out = []
     for orc, p in planos.items():
         r = p["raw"]
         venda = data_br(r["dataVenda"])
-        if p["estab"] not in UNIDS or p["status"] != "Aprovado" or not venda or not inicio <= venda <= ATE:
+        if p["estab"] not in UNIDS or p["status"] != "Aprovado" or not venda or not inicio <= venda <= fim:
             continue
         servs = r["servicos"]
         parc, cota, validade = p["parcelas"], p["cota"], p.get("validade")  # parcelas da venda inteira
@@ -198,7 +198,7 @@ def base(ws, cols, dados, fmts, nome_tabela, larg):
     ws.row_dimensions[1].height = 30
 
 
-def montar(planos_aud, linhas, agenda, inicio, destino, compactar=True):
+def montar(planos_aud, linhas, agenda, inicio, destino, compactar=True, fim=ATE):
     wb = Workbook()
     unids = list(UNIDS.values())
     N, P = max(len(linhas), 1) + 1, max(len(planos_aud), 1) + 1  # última linha de cada base (nunca antes da 2)
@@ -216,7 +216,7 @@ def montar(planos_aud, linhas, agenda, inicio, destino, compactar=True):
     def AG(c):
         return f"Agenda!${c}$2:${c}${G}"
 
-    fonte = f"Período: {inicio:%d/%m/%Y} a {ATE:%d/%m/%Y} • Unidades: {', '.join(unids)} • Fonte: API Belle Software, extraído em {HOJE:%d/%m/%Y}"
+    fonte = f"Período: {inicio:%d/%m/%Y} a {fim:%d/%m/%Y} • Unidades: {', '.join(unids)} • Fonte: API Belle Software, extraído em {HOJE:%d/%m/%Y}"
 
     # ---------------- Resumo por Unidade
     rs = wb.active
@@ -676,9 +676,11 @@ def compactar_xlsx(caminho, formulas_por_aba):
 
 if __name__ == "__main__":
     desde = dt.datetime.strptime(os.environ["BELLE_DESDE"], "%d/%m/%Y").date() if os.environ.get("BELLE_DESDE") else None
-    tabela, planos, linhas, agenda = coletar(desde)
-    inicio = min(l["data"] for l in linhas).replace(day=1)
-    planos_aud = auditar_planos(planos, tabela, inicio)
+    ate = dt.datetime.strptime(os.environ["BELLE_ATE"], "%d/%m/%Y").date() if os.environ.get("BELLE_ATE") else None
+    tabela, planos, linhas, agenda = coletar(desde, ate)
+    inicio = desde or min(l["data"] for l in linhas).replace(day=1)
+    fim = ate or ATE
+    planos_aud = auditar_planos(planos, tabela, inicio, fim)
     out = os.environ.get("BELLE_OUT", "Auditoria_Precos_Drenesse.xlsx")
-    montar(planos_aud, linhas, agenda, inicio, out)
+    montar(planos_aud, linhas, agenda, inicio, out, fim=fim)
     print(f"{len(linhas)} atendimentos, {len(planos_aud)} planos aprovados -> {out}")
