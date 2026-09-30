@@ -18,7 +18,7 @@ from openpyxl.utils import get_column_letter
 
 def coletar(ini, fim):
     tabela = {str(s["codServico"]): br(s["valor"]) for s in api("servico/listar")}
-    planos = carregar_planos()
+    planos = carregar_planos(tabela)
     linhas = []
     for e, unidade in UNIDADES.items():
         ags = api("relatorios/relatorio_atendimentos", dtInicio=ini, dtFim=fim, codEstab=str(e))

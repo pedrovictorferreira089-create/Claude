@@ -4,11 +4,11 @@ Uso: python3 belle_sabados.py [codEstab ...]   (padrão: todas as unidades)
 Os dados brutos da API ficam em cache em ./data para não estourar o rate limit (40 req/min).
 """
 import datetime as dt
-import glob
 import json
 import os
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -20,7 +20,8 @@ from openpyxl.worksheet.table import Table, TableStyleInfo
 BASE = "https://app.bellesoftware.com.br/api/release/controller/IntegracaoExterna/v1.0/"
 TOKEN = os.environ.get("BELLE_TOKEN", "")
 CACHE = os.environ.get("BELLE_CACHE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "data"))
-HOJE = dt.date(2026, 9, 29)
+# Data de referência: parcelas com vencimento anterior a ela e não pagas contam como vencidas.
+HOJE = dt.datetime.strptime(os.environ["BELLE_HOJE"], "%d/%m/%Y").date() if os.environ.get("BELLE_HOJE") else dt.date.today()
 UNIDADES = {1: "Petrópolis", 2: "Lagoa Nova", 3: "Capim Macio", 6: "Norte Shopping", 4: "Laser"}
 MAX_ROWS = 5000  # alcance das fórmulas do resumo
 
@@ -33,15 +34,43 @@ def api(path, **q):
     req = urllib.request.Request(BASE + path + "?" + urllib.parse.urlencode(q), headers={"Authorization": TOKEN})
     for tentativa in range(4):
         try:
-            data = json.loads(urllib.request.urlopen(req, timeout=180).read())
+            data = json.loads(urllib.request.urlopen(req, timeout=300).read())
             break
+        except urllib.error.HTTPError as e:
+            if tentativa == 3 or (400 <= e.code < 500 and e.code != 429):
+                raise
+            time.sleep(20)
         except Exception:
             if tentativa == 3:
                 raise
             time.sleep(20)
     time.sleep(1.7)
+    if isinstance(data, dict) and ("erro" in data or "error" in data):
+        raise RuntimeError(f"{path} {q}: {data}")
     json.dump(data, open(fn, "w"), ensure_ascii=False)
     return data
+
+
+def trimestres(ate, desde=dt.date(2018, 1, 1)):
+    """Janelas de trimestre civil (a API aceita no máximo 3 meses por consulta), da mais recente para a mais antiga."""
+    fim = ate
+    while fim >= desde:
+        ini = dt.date(fim.year, 3 * ((fim.month - 1) // 3) + 1, 1)
+        yield max(ini, desde), fim
+        fim = ini - dt.timedelta(days=1)
+
+
+def historico(path, param_estab, estab, ate, desde=None):
+    """Registros de um relatório em janelas trimestrais, do fim para trás.
+    Sem `desde`, para após 3 trimestres seguidos sem dados (início do histórico da unidade)."""
+    out, vazios = [], 0
+    for ini, fim in trimestres(ate, desde or dt.date(2018, 1, 1)):
+        d = api(path, dtInicio=ini.strftime("%d/%m/%Y"), dtFim=fim.strftime("%d/%m/%Y"), **{param_estab: str(estab)})
+        out.extend(d)
+        vazios = 0 if d else vazios + 1
+        if desde is None and vazios >= 3:
+            break
+    return out
 
 
 def br(v):
@@ -60,38 +89,44 @@ def sabados():
     return sorted(out)
 
 
-def carregar_planos():
-    """Valor por sessão de cada serviço em cada plano vendido (rateio do preço final),
-    com o status do plano e a fração do preço final que não está em atraso (parcelas vencidas e não pagas)."""
-    for e in UNIDADES:
-        fim = HOJE
-        while fim > dt.date(2023, 10, 1):
-            ini = fim - dt.timedelta(days=89)
-            api("venda_planos", dtInicio=ini.strftime("%d/%m/%Y"), dtFim=fim.strftime("%d/%m/%Y"), codEstab=str(e))
-            fim = ini - dt.timedelta(days=1)
+def carregar_planos(tabela=None):
+    """Planos vendidos em todas as unidades (histórico completo), com valor por sessão de cada serviço
+    (rateio do preço final), status e fração do preço final que não está em atraso (parcelas vencidas e não pagas)."""
+    tabela = tabela or {}
     valores = {}
-    for f in glob.glob(os.path.join(CACHE, "venda_planos__*")):
-        for p in json.load(open(f)):
-            liq = {}
+    for e in UNIDADES:
+        for p in historico("venda_planos", "codEstab", e, HOJE):
+            liq, unit = {}, {}
             for s in p["servicos"]:
+                cod = str(s["codigoServico"])
                 if s["cortesia"] == "Sim":
                     v = 0.0
                 elif s["tipoDesconto"] == "%":
                     v = br(s["valorTotalServico"]) * (1 - br(s["desconto"]) / 100)
                 else:
                     v = br(s["valorTotalServico"]) - br(s["desconto"])
-                liq.setdefault(str(s["codigoServico"]), []).append((v, s["qtdSessoes"] or 1))
-            soma = sum(v for lst in liq.values() for v, _ in lst)
-            fator = br(p["precoFinal"]) / soma if soma else 0.0
+                qtd = s["qtdSessoes"] or 1
+                liq.setdefault(cod, []).append((v, qtd, s["cortesia"] == "Sim"))
+                unit.setdefault(cod, br(s["valorServico"]))
             preco_final = br(p["precoFinal"])
+            soma = sum(v for lst in liq.values() for v, _, _ in lst)
+            if soma <= 0 and preco_final > 0:
+                # itens sem valor cadastrado: rateia o preço final pela tabela (ou pelas sessões) dos itens pagos
+                for cod, lst in liq.items():
+                    liq[cod] = [(0.0 if c else q * (tabela.get(cod) or 1.0), q, c) for _, q, c in lst]
+                soma = sum(v for lst in liq.values() for v, _, _ in lst)
+            fator = preco_final / soma if soma else 0.0
             vencido = sum(br(x["valorLiquido"]) for x in p["parcelas"]
                           if x["confirmado"] != "Sim" and x["dataVencimento"]
                           and dt.datetime.strptime(x["dataVencimento"], "%d/%m/%Y").date() < HOJE)
             valores[p["codOrcamento"]] = {
                 "nome": p["nomePlano"].strip(),
                 "status": p["statusPlano"],
+                "estab": e,
+                "raw": p,
+                "unit": unit,
                 "pago": max(1.0 - vencido / preco_final, 0.0) if preco_final else 1.0,
-                "svc": {c: sum(v for v, _ in lst) * fator / sum(q for _, q in lst) for c, lst in liq.items()},
+                "svc": {c: sum(v for v, _, _ in lst) * fator / sum(q for _, q, _ in lst) for c, lst in liq.items()},
             }
     return valores
 
@@ -109,6 +144,9 @@ def valorar(a, servico, planos, tabela, avulsos):
         cheio = p["svc"][cod]
         val = cheio * p["pago"]
         obs = f"Sessão do plano {orc} ({p['nome']})"
+        if tab is None and p["unit"].get(cod):
+            tab = p["unit"][cod]
+            obs += " – fora da tabela atual, usado o preço unitário do plano"
         if cheio == 0:
             obs += " – cortesia/100% desconto"
         elif p["pago"] < 1:
@@ -119,13 +157,17 @@ def valorar(a, servico, planos, tabela, avulsos):
     m = next((x for x in avulsos if x[0] == a["codigoCliente"] and x[1]["desc_item"].strip() == servico), None)
     if m:
         avulsos.remove(m)
-        return tab, br(m[1]["valor_liquido"]), "Avulso", "Venda avulsa registrada no dia"
+        obs = "Venda avulsa registrada no dia"
+        if tab is None and br(m[1]["valor_bruto"]):
+            tab = br(m[1]["valor_bruto"])
+            obs += " – fora da tabela atual, usado o valor bruto da venda"
+        return tab, br(m[1]["valor_liquido"]), "Avulso", obs
     return tab, 0.0, "Avulso s/ venda", "Sem venda registrada no dia (experimental, cortesia ou pago em outra data)"
 
 
 def coletar(estabs):
     tabela = {str(s["codServico"]): br(s["valor"]) for s in api("servico/listar")}
-    planos = carregar_planos()
+    planos = carregar_planos(tabela)
     atend, faltas = [], []
     for e in estabs:
         for d in sabados():
