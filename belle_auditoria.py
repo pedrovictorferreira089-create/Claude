@@ -8,14 +8,22 @@ descontada a parte do plano em parcelas vencidas e não pagas; avulso = venda re
 """
 import collections
 import datetime as dt
+import html
 import os
+import re
+import zipfile
 
+import openpyxl.workbook.workbook as _wbmod
 from openpyxl import Workbook
+from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.table import Table, TableStyleInfo
 
 from belle_sabados import (BOX, BRL, CENTER, F, FB, FI, FT, HOJE, TOT, api, br, cabecalho, carregar_planos, historico,
                            larguras, valorar)
+
+# Fonte padrão do arquivo = Arial 10: as abas de dados (centenas de milhares de linhas) dispensam estilo célula a célula.
+_wbmod.DEFAULT_FONT = Font(name="Arial", size=10)
 
 UNIDS = {1: "Petrópolis", 2: "Lagoa Nova", 3: "Capim Macio", 6: "Norte Shopping"}
 ATE = HOJE - dt.timedelta(days=1)
@@ -180,8 +188,7 @@ def base(ws, cols, dados, fmts, nome_tabela, larg):
         ws.append(vals)
     for row in ws.iter_rows(min_row=2, max_row=len(dados) + 1):
         for c, fmt in zip(row, fmts):
-            c.font = F
-            if fmt:
+            if fmt and c.value is not None:
                 c.number_format = fmt
     ultima = get_column_letter(len(cols))
     ws.add_table(Table(displayName=nome_tabela, ref=f"A1:{ultima}{max(len(dados) + 1, 2)}",
@@ -191,7 +198,7 @@ def base(ws, cols, dados, fmts, nome_tabela, larg):
     ws.row_dimensions[1].height = 30
 
 
-def montar(planos_aud, linhas, agenda, inicio, destino):
+def montar(planos_aud, linhas, agenda, inicio, destino, compactar=True):
     wb = Workbook()
     unids = list(UNIDS.values())
     N, P = max(len(linhas), 1) + 1, max(len(planos_aud), 1) + 1  # última linha de cada base (nunca antes da 2)
@@ -586,6 +593,85 @@ def montar(planos_aud, linhas, agenda, inicio, destino):
 
     wb.calculation.fullCalcOnLoad = True
     wb.save(destino)
+    if compactar:
+        compactar_xlsx(destino, {"Atendimentos": {"O", "P", "Q"}, "Planos": {"M", "N", "O", "P", "R"}, "Agenda": {"H"}})
+
+
+def compactar_xlsx(caminho, formulas_por_aba):
+    """Reescreve o .xlsx gerado pelo openpyxl de forma mais enxuta, sem mudar o conteúdo: os textos viram strings
+    compartilhadas (o openpyxl grava cada texto por extenso em cada célula), as fórmulas que se repetem linha a
+    linha viram fórmulas compartilhadas do Excel e o zip é recomprimido no nível máximo."""
+    with zipfile.ZipFile(caminho) as z:
+        ordem = [i.filename for i in z.infolist()]
+        partes = {n: z.read(n) for n in ordem}
+    rels = partes["xl/_rels/workbook.xml.rels"].decode("utf-8")
+    alvo = {}
+    for rel in re.findall(r"<Relationship\b[^>]*>", rels):
+        destino_rel = re.search(r'\bTarget="([^"]+)"', rel).group(1)
+        alvo[re.search(r'\bId="([^"]+)"', rel).group(1)] = destino_rel.lstrip("/") if destino_rel.startswith("/") else "xl/" + destino_rel
+    abas = {}
+    for sh in re.findall(r"<sheet\b[^>]*>", partes["xl/workbook.xml"].decode("utf-8")):
+        abas[html.unescape(re.search(r'\bname="([^"]*)"', sh).group(1))] = alvo[re.search(r'\br:id="([^"]+)"', sh).group(1)]
+
+    cel_f = re.compile(r'<c r="([A-Z]+)(\d+)"([^>]*)><f>([^<]*)</f>(<v\s*/>|<v></v>)?</c>')
+    for aba, colunas in formulas_por_aba.items():
+        xml = partes[abas[aba]].decode("utf-8")
+
+        def modelo(m):  # fórmula com o número da própria linha trocado por #
+            return re.sub(rf"(?<=[A-Z]){m.group(2)}(?!\d)", "#", m.group(4))
+        mestre = {}  # coluna -> [linha mestre, última linha, modelo, si]
+        for m in cel_f.finditer(xml):
+            c = m.group(1)
+            if c not in colunas:
+                continue
+            if c not in mestre:
+                mestre[c] = [int(m.group(2)), int(m.group(2)), modelo(m), len(mestre)]
+            elif modelo(m) == mestre[c][2]:
+                mestre[c][1] = int(m.group(2))
+
+        def troca_f(m):
+            c, lin = m.group(1), int(m.group(2))
+            if c not in mestre or modelo(m) != mestre[c][2]:
+                return m.group(0)
+            ini, fim, _, si = mestre[c]
+            v = m.group(5) or ""
+            if lin == ini:
+                return f'<c r="{c}{lin}"{m.group(3)}><f t="shared" ref="{c}{ini}:{c}{fim}" si="{si}">{m.group(4)}</f>{v}</c>'
+            return f'<c r="{c}{lin}"{m.group(3)}><f t="shared" si="{si}"/>{v}</c>'
+        partes[abas[aba]] = cel_f.sub(troca_f, xml).encode("utf-8")
+
+    textos, indice, usos = [], {}, 0
+    cel_s = re.compile(r'<c r="([A-Z]+\d+)"([^>]*?) t="inlineStr"><is><t( xml:space="preserve")?>(.*?)</t></is></c>', re.S)
+
+    def troca_s(m):
+        nonlocal usos
+        chave = (m.group(3) or "", m.group(4))
+        if chave not in indice:
+            indice[chave] = len(textos)
+            textos.append(chave)
+        usos += 1
+        return f'<c r="{m.group(1)}"{m.group(2)} t="s"><v>{indice[chave]}</v></c>'
+    for parte in abas.values():
+        partes[parte] = cel_s.sub(troca_s, partes[parte].decode("utf-8")).encode("utf-8")
+    partes["xl/sharedStrings.xml"] = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        f'<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="{usos}" uniqueCount="{len(textos)}">'
+        + "".join(f"<si><t{p}>{t}</t></si>" for p, t in textos) + "</sst>").encode("utf-8")
+    tipos = partes["[Content_Types].xml"].decode("utf-8")
+    if "/xl/sharedStrings.xml" not in tipos:
+        tipos = tipos.replace("</Types>", '<Override PartName="/xl/sharedStrings.xml" ContentType="application/'
+                              'vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/></Types>')
+    partes["[Content_Types].xml"] = tipos.encode("utf-8")
+    if "sharedStrings" not in rels:
+        novo_id = next(f"rId{i}" for i in range(len(alvo) + 1, len(alvo) + 100) if f"rId{i}" not in alvo)
+        rels = rels.replace("</Relationships>", f'<Relationship Id="{novo_id}" Type="http://schemas.openxmlformats.org/'
+                            'officeDocument/2006/relationships/sharedStrings" Target="/xl/sharedStrings.xml"/></Relationships>')
+    partes["xl/_rels/workbook.xml.rels"] = rels.encode("utf-8")
+    temp = caminho + ".tmp"
+    with zipfile.ZipFile(temp, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+        for n in ordem + (["xl/sharedStrings.xml"] if "xl/sharedStrings.xml" not in ordem else []):
+            z.writestr(n, partes[n])
+    os.replace(temp, caminho)
 
 
 if __name__ == "__main__":
