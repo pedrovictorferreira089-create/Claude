@@ -3,6 +3,7 @@
 Uso: python3 belle_sabados.py [codEstab ...]   (padrão: todas as unidades)
 Os dados brutos da API ficam em cache em ./data para não estourar o rate limit (40 req/min).
 """
+import collections
 import datetime as dt
 import json
 import os
@@ -60,12 +61,12 @@ def trimestres(ate, desde=dt.date(2018, 1, 1)):
         fim = ini - dt.timedelta(days=1)
 
 
-def historico(path, param_estab, estab, ate, desde=None):
+def historico(path, param_estab, estab, ate, desde=None, p_ini="dtInicio", p_fim="dtFim"):
     """Registros de um relatório em janelas trimestrais, do fim para trás.
     Sem `desde`, para após 3 trimestres seguidos sem dados (início do histórico da unidade)."""
     out, vazios = [], 0
     for ini, fim in trimestres(ate, desde or dt.date(2018, 1, 1)):
-        d = api(path, dtInicio=ini.strftime("%d/%m/%Y"), dtFim=fim.strftime("%d/%m/%Y"), **{param_estab: str(estab)})
+        d = api(path, **{p_ini: ini.strftime("%d/%m/%Y"), p_fim: fim.strftime("%d/%m/%Y"), param_estab: str(estab)})
         out.extend(d)
         vazios = 0 if d else vazios + 1
         if desde is None and vazios >= 3:
@@ -116,18 +117,34 @@ def carregar_planos(tabela=None):
                     liq[cod] = [(0.0 if c else q * (tabela.get(cod) or 1.0), q, c) for _, q, c in lst]
                 soma = sum(v for lst in liq.values() for v, _, _ in lst)
             fator = preco_final / soma if soma else 0.0
-            vencido = sum(br(x["valorLiquido"]) for x in p["parcelas"]
-                          if x["confirmado"] != "Sim" and x["dataVencimento"]
-                          and dt.datetime.strptime(x["dataVencimento"], "%d/%m/%Y").date() < HOJE)
             valores[p["codOrcamento"]] = {
                 "nome": p["nomePlano"].strip(),
                 "status": p["statusPlano"],
                 "estab": e,
                 "raw": p,
                 "unit": unit,
-                "pago": max(1.0 - vencido / preco_final, 0.0) if preco_final else 1.0,
                 "svc": {c: sum(v for v, _, _ in lst) * fator / sum(q for _, q, _ in lst) for c, lst in liq.items()},
             }
+    # As parcelas são da venda: planos vendidos juntos repetem a lista inteira, e a venda pode ter outros itens.
+    # Junta as parcelas de cada venda (sem repetir) e dá a cada plano a sua parte, proporcional ao preço final.
+    vendas = collections.defaultdict(list)
+    for orc, v in valores.items():
+        vendas[v["raw"].get("idVenda") or ("plano", orc)].append(orc)
+    for orcs in vendas.values():
+        parcelas = {}
+        for o in orcs:
+            for x in valores[o]["raw"]["parcelas"]:
+                if x["dataVencimento"] and x["valorLiquido"] not in (None, ""):
+                    parcelas[x.get("idParcela") or (x["dataVencimento"], x["valorLiquido"], x["formaPagamento"])] = x
+        total = sum(br(x["valorLiquido"]) for x in parcelas.values())
+        base_rateio = max(total, sum(br(valores[o]["raw"]["precoFinal"]) for o in orcs))
+        vencido = sum(br(x["valorLiquido"]) for x in parcelas.values()
+                      if x["confirmado"] != "Sim" and dt.datetime.strptime(x["dataVencimento"], "%d/%m/%Y").date() < HOJE)
+        for o in orcs:
+            v = valores[o]
+            v["parcelas"] = sorted(parcelas.values(), key=lambda x: dt.datetime.strptime(x["dataVencimento"], "%d/%m/%Y"))
+            v["cota"] = br(v["raw"]["precoFinal"]) / base_rateio if base_rateio else 0.0
+            v["pago"] = max(1.0 - vencido / base_rateio, 0.0) if base_rateio else 1.0
     return valores
 
 

@@ -19,7 +19,7 @@ from belle_sabados import (BOX, BRL, CENTER, F, FB, FI, FT, HOJE, TOT, api, br, 
 
 UNIDS = {1: "Petrópolis", 2: "Lagoa Nova", 3: "Capim Macio", 6: "Norte Shopping"}
 ATE = HOJE - dt.timedelta(days=1)
-CORTE = dt.date(2027, 10, 31)  # parcelas com vencimento depois de outubro/2027
+CORTE = dt.date(2027, 10, 31)  # planos com vencimento (validade) depois de outubro/2027
 NUM = '#,##0;-#,##0;"-"'
 PCT = '0.0%;-0.0%;"-"'
 DATA = "dd/mm/yyyy"
@@ -73,6 +73,11 @@ def motivo(origem, tab, val):
 def coletar(desde=None):
     tabela = {str(s["codServico"]): br(s["valor"]) for s in api("servico/listar")}
     planos = carregar_planos(tabela)
+    for e in UNIDS:  # vencimento (validade) de cada plano, do relatório Sessões de Planos
+        for x in historico("relatorios/sessoes_planos", "codEstab", e, HOJE, p_ini="dtVndIni", p_fim="dtVndFim"):
+            p, v = planos.get(x["idPlano"]), data_br(x.get("dtValidade"))
+            if p is not None and v:
+                p["validade"] = max(v, p.get("validade") or v)
     linhas, agenda = [], collections.Counter()
     for e, unidade in UNIDS.items():
         ags = historico("relatorios/relatorio_atendimentos", "codEstab", e, ATE)
@@ -119,10 +124,9 @@ def auditar_planos(planos, tabela, inicio):
         if p["estab"] not in UNIDS or p["status"] != "Aprovado" or not venda or not inicio <= venda <= ATE:
             continue
         servs = r["servicos"]
-        parc = [x for x in r["parcelas"] if x["dataVencimento"] and x["valorLiquido"] not in (None, "")]
-        vencs = sorted(data_br(x["dataVencimento"]) for x in parc)
+        parc, cota, validade = p["parcelas"], p["cota"], p.get("validade")  # parcelas da venda inteira
+        vencs = [data_br(x["dataVencimento"]) for x in parc]
         aberto = [x for x in parc if x["confirmado"] != "Sim"]
-        apos = [x for x in parc if data_br(x["dataVencimento"]) > CORTE]
         saldo = collections.Counter()
         for s in r.get("saldoPlano") or []:
             saldo[str(s["codigoServico"])] += int(br(s["qtdSessaoRestante"]))
@@ -135,14 +139,14 @@ def auditar_planos(planos, tabela, inicio):
             tabela=round(sum((s["qtdSessoes"] or 0) * (tabela.get(str(s["codigoServico"])) or br(s["valorServico"]))
                              for s in servs), 2),
             cheio=round(sum(br(s["valorTotalServico"]) for s in servs), 2), final=br(r["precoFinal"]),
+            validade=validade, meses=(validade.year - venda.year) * 12 + validade.month - venda.month if validade else None,
+            venda_id=int(r["idVenda"]) if str(r.get("idVenda") or "").isdigit() else None,
             parcelas=len(parc), formas=", ".join(sorted({(x["formaPagamento"] or "").strip() for x in parc} - {""})),
-            primeiro=vencs[0] if vencs else None, ultimo=vencs[-1] if vencs else None,
-            pago=round(sum(br(x["valorLiquido"]) for x in parc if x["confirmado"] == "Sim"), 2),
-            vencido=round(sum(br(x["valorLiquido"]) for x in aberto if data_br(x["dataVencimento"]) < HOJE), 2),
-            a_vencer=round(sum(br(x["valorLiquido"]) for x in aberto if data_br(x["dataVencimento"]) >= HOJE), 2),
-            restantes=sum(saldo.values()), a_realizar=round(sum(q * p["svc"].get(c, 0.0) for c, q in saldo.items()), 2),
-            apos_qtd=len(apos), apos_valor=round(sum(br(x["valorLiquido"]) for x in apos), 2),
-            apos_aberto=round(sum(br(x["valorLiquido"]) for x in apos if x["confirmado"] != "Sim"), 2)))
+            primeiro=min(vencs) if vencs else None, ultimo=max(vencs) if vencs else None,
+            pago=round(cota * sum(br(x["valorLiquido"]) for x in parc if x["confirmado"] == "Sim"), 2),
+            vencido=round(cota * sum(br(x["valorLiquido"]) for x in aberto if data_br(x["dataVencimento"]) < HOJE), 2),
+            a_vencer=round(cota * sum(br(x["valorLiquido"]) for x in aberto if data_br(x["dataVencimento"]) >= HOJE), 2),
+            restantes=sum(saldo.values()), a_realizar=round(sum(q * p["svc"].get(c, 0.0) for c, q in saldo.items()), 2)))
     canonizar(out, "vendedor")
     return sorted(out, key=lambda x: (ordem[x["estab"]], x["venda"], x["orc"]))
 
@@ -246,20 +250,20 @@ def montar(planos_aud, linhas, agenda, inicio, destino):
     linha(rs, r, ["TOTAL"] + [f"=SUM({c}{h2 + 1}:{c}{r - 1})" for c in "BCDEFGHIJK"], fm2, total=True)
 
     r += 2
-    secao(rs, r, "3. Planos aprovados vendidos no período – desconto sobre a tabela e parcelas após outubro/2027")
+    secao(rs, r, "3. Planos aprovados vendidos no período – desconto sobre a tabela e vencimento após outubro/2027")
     r += 1
     h3 = r
     cabecalho(rs, r, ["Unidade", "Planos vendidos", "Valor de tabela (R$)", "Valor vendido (R$)", "Desconto concedido (R$)",
                       "Desconto médio", "Planos com desconto > 50% sobre a tabela", "% dos planos",
-                      "Planos com desconto > 50% sobre o preço cheio registrado no plano", "Planos com parcelas após out/2027",
-                      "Valor das parcelas após out/2027 (R$)"])
+                      "Planos com desconto > 50% sobre o preço cheio registrado no plano",
+                      "Planos com vencimento (validade) após out/2027", "Valor vendido nesses planos (R$)"])
     fm3 = [None, NUM, BRL, BRL, BRL, PCT, NUM, PCT, NUM, NUM, BRL]
     for u in unids:
         r += 1
         linha(rs, r, [u, f"=COUNTIFS({PL('A')},$A{r})", f"=SUMIFS({PL('J')},{PL('A')},$A{r})", f"=SUMIFS({PL('L')},{PL('A')},$A{r})",
                       f"=C{r}-D{r}", f"=IFERROR(E{r}/C{r},0)", f'=COUNTIFS({PL("A")},$A{r},{PL("O")},"SIM")',
                       f"=IFERROR(G{r}/B{r},0)", f'=COUNTIFS({PL("A")},$A{r},{PL("P")},">0.5")',
-                      f'=COUNTIFS({PL("A")},$A{r},{PL("Z")},">0")', f"=SUMIFS({PL('Z')},{PL('A')},$A{r})"], fm3)
+                      f'=COUNTIFS({PL("A")},$A{r},{PL("R")},"SIM")', f'=SUMIFS({PL("L")},{PL("A")},$A{r},{PL("R")},"SIM")'], fm3)
     r += 1
     linha(rs, r, ["TOTAL", f"=SUM(B{h3 + 1}:B{r - 1})", f"=SUM(C{h3 + 1}:C{r - 1})", f"=SUM(D{h3 + 1}:D{r - 1})", f"=C{r}-D{r}",
                   f"=IFERROR(E{r}/C{r},0)", f"=SUM(G{h3 + 1}:G{r - 1})", f"=IFERROR(G{r}/B{r},0)", f"=SUM(I{h3 + 1}:I{r - 1})",
@@ -272,6 +276,8 @@ def montar(planos_aud, linhas, agenda, inicio, destino):
         "• Plano Suspenso/Pendente, plano não localizado na API e avulso sem venda no dia entram com faturado R$ 0 – veja o motivo na seção 2 antes de tratar como desconto.",
         "• Diferença = faturado − tabela. Deixou de ganhar = quanto a mais entraria se a sessão fosse cobrada pela tabela (só diferenças positivas). Ganhou com o desconto = valor faturado.",
         "• Planos: só status Aprovado, vendidos pelas 4 unidades no período. Desconto = 1 − preço final ÷ (sessões vendidas × preço de tabela, incluindo cortesias).",
+        "• Parcelas: a API registra as parcelas por venda. Quando a venda tem mais de um plano (ou outros itens), cada plano recebe a parte proporcional ao seu preço final.",
+        "• Vencimento do plano = data de validade (relatório Sessões de Planos do Belle). Nenhuma parcela de pagamento vence depois de outubro/2027.",
         "• A tabela atual pode ser diferente da tabela vigente na data da venda. Para planos antigos, compare também com o 'Preço cheio no plano' (aba Planos).",
     ]
     r += 2
@@ -350,38 +356,43 @@ def montar(planos_aud, linhas, agenda, inicio, destino):
     cols_p = ["Unidade", "Nº plano", "Data da venda", "Cliente", "Plano", "Tipo", "Vendedor", "Sessões vendidas",
               "Sessões cortesia", "Valor de tabela (R$)", "Preço cheio no plano (R$)", "Preço final (R$)",
               "Desconto s/ tabela (R$)", "% desconto s/ tabela", "Desconto > 50%?", "% desconto s/ preço cheio do plano",
-              "Nº parcelas", "Forma(s) de pagamento", "1º vencimento", "Último vencimento", "Pago (R$)",
+              "Vencimento do plano (validade)", "Vence após out/2027?", "Nº da venda", "Parcelas da venda",
+              "Forma(s) de pagamento", "1º vencimento de parcela", "Último vencimento de parcela", "Pago (R$)",
               "Vencido e não pago (R$)", "A vencer (R$)", "Sessões restantes", "Valor das sessões a realizar (R$)",
-              "Parcelas após out/2027 (R$)"]
-    fmp = [None, "0", DATA, None, None, None, None, NUM, NUM, BRL, BRL, BRL, BRL, PCT, None, PCT, NUM, None, DATA, DATA,
-           BRL, BRL, BRL, NUM, BRL, BRL]
+              "Meses de validade"]
+    fmp = [None, "0", DATA, None, None, None, None, NUM, NUM, BRL, BRL, BRL, BRL, PCT, None, PCT, DATA, None, "0", NUM, None,
+           DATA, DATA, BRL, BRL, BRL, NUM, BRL, NUM]
     dados_p = []
     for i, p in enumerate(planos_aud, 2):
         dados_p.append([p["unidade"], p["orc"], p["venda"], p["cliente"], p["plano"], p["tipo"], p["vendedor"], p["sessoes"],
                         p["cortesia"], p["tabela"], p["cheio"], p["final"], f"=J{i}-L{i}", f'=IF(J{i}>0,1-L{i}/J{i},"")',
-                        f'=IF(N{i}="","",IF(N{i}>0.5,"SIM","NÃO"))', f'=IF(K{i}>0,1-L{i}/K{i},"")', p["parcelas"],
-                        p["formas"] or None, p["primeiro"], p["ultimo"], p["pago"], p["vencido"], p["a_vencer"],
-                        p["restantes"], p["a_realizar"], p["apos_valor"]])
+                        f'=IF(N{i}="","",IF(N{i}>0.5,"SIM","NÃO"))', f'=IF(K{i}>0,1-L{i}/K{i},"")', p["validade"],
+                        f'=IF(Q{i}="","",IF(Q{i}>DATE({CORTE.year},{CORTE.month},{CORTE.day}),"SIM","NÃO"))', p["venda_id"],
+                        p["parcelas"], p["formas"] or None, p["primeiro"], p["ultimo"], p["pago"], p["vencido"], p["a_vencer"],
+                        p["restantes"], p["a_realizar"], p["meses"]])
     base(wp, cols_p, dados_p, fmp, "TabPlanos",
-         [15, 11, 11, 32, 30, 14, 30, 9, 9, 15, 15, 15, 15, 11, 10, 11, 9, 26, 11, 11, 14, 14, 14, 10, 15, 14])
+         [15, 11, 11, 32, 30, 14, 30, 9, 9, 15, 15, 15, 15, 11, 10, 11, 12, 10, 11, 9, 26, 11, 11, 14, 14, 14, 10, 15, 10])
 
-    # ---------------- Vencimentos após out/2027
+    # ---------------- Vencimentos após out/2027 (validade do plano)
     wv = wb.create_sheet("Venc após out-2027")
-    lista = sorted((p for p in planos_aud if p["apos_qtd"]), key=lambda p: (-p["apos_valor"], p["orc"]))
-    titulo(wv, f"Planos aprovados com parcelas vencendo depois de outubro/2027 ({len(lista)} planos)", fonte)
-    cabecalho(wv, 4, ["Unidade", "Nº plano", "Cliente", "Data da venda", "Plano", "Vendedor", "Preço final (R$)", "Nº parcelas",
-                      "Forma(s) de pagamento", "1º vencimento", "Último vencimento", "Parcelas após out/2027",
-                      "Valor após out/2027 (R$)", "Desse valor, ainda não pago (R$)"])
-    fmv = [None, "0", None, DATA, None, None, BRL, NUM, None, DATA, DATA, NUM, BRL, BRL]
+    lista = sorted((p for p in planos_aud if p["validade"] and p["validade"] > CORTE), key=lambda p: (p["validade"], p["orc"]), reverse=True)
+    ult_parcela = max((p["ultimo"] for p in planos_aud if p["ultimo"]), default=None)
+    titulo(wv, f"Planos aprovados com vencimento (validade) depois de outubro/2027 – {len(lista)} planos",
+           fonte + (f" • Nenhuma parcela de pagamento vence depois de out/2027 (a mais distante vence em {ult_parcela:%d/%m/%Y})."
+                    if ult_parcela else ""))
+    cabecalho(wv, 4, ["Unidade", "Nº plano", "Cliente", "Data da venda", "Vencimento do plano", "Meses de validade", "Plano",
+                      "Vendedor", "Preço final (R$)", "Sessões vendidas", "Sessões restantes", "Valor das sessões a realizar (R$)",
+                      "Pago (R$)", "Vencido e não pago (R$)"])
+    fmv = [None, "0", None, DATA, DATA, NUM, None, None, BRL, NUM, NUM, BRL, BRL, BRL]
     r = 4
     for p in lista:
         r += 1
-        linha(wv, r, [p["unidade"], p["orc"], p["cliente"], p["venda"], p["plano"], p["vendedor"], p["final"], p["parcelas"],
-                      p["formas"], p["primeiro"], p["ultimo"], p["apos_qtd"], p["apos_valor"], p["apos_aberto"]], fmv)
+        linha(wv, r, [p["unidade"], p["orc"], p["cliente"], p["venda"], p["validade"], p["meses"], p["plano"], p["vendedor"],
+                      p["final"], p["sessoes"], p["restantes"], p["a_realizar"], p["pago"], p["vencido"]], fmv)
     r += 1
-    linha(wv, r, ["TOTAL", f"=COUNT(B5:B{r - 1})", "", "", "", "", f"=SUM(G5:G{r - 1})", "", "", "", "",
-                  f"=SUM(L5:L{r - 1})", f"=SUM(M5:M{r - 1})", f"=SUM(N5:N{r - 1})"], fmv, total=True)
-    larguras(wv, [15, 11, 32, 11, 30, 30, 14, 9, 26, 11, 11, 11, 15, 15])
+    linha(wv, r, ["TOTAL", f"=COUNT(B5:B{r - 1})", "", "", "", "", "", ""] + [f"=SUM({c}5:{c}{r - 1})" for c in "IJKLMN"],
+          fmv, total=True)
+    larguras(wv, [15, 11, 32, 11, 12, 10, 30, 30, 14, 10, 10, 15, 14, 14])
     wv.freeze_panes = "A5"
     wv.row_dimensions[4].height = 30
 
@@ -418,7 +429,23 @@ def montar(planos_aud, linhas, agenda, inicio, destino):
     linha(wi, r, ["TOTAL"] + [f"=SUM({c}{hB + 1}:{c}{r - 1})" for c in "BCDEF"], fmB, total=True)
 
     r += 2
-    secao(wi, r, "C. Recebimentos, inadimplência e sessões ainda a realizar (planos aprovados vendidos no período)")
+    secao(wi, r, "C. Planos aprovados com preço final zero (sessões entregues sem cobrança)")
+    r += 1
+    hZ = r
+    cabecalho(wi, r, ["Unidade", "Planos com preço zero", "% dos planos da unidade", "Sessões vendidas", "Valor de tabela (R$)",
+                      "Sessões restantes"])
+    fmZ = [None, NUM, PCT, NUM, BRL, NUM]
+    for u in unids:
+        r += 1
+        cz = f"{PL('A')},$A{r},{PL('L')},0"
+        linha(wi, r, [u, f"=COUNTIFS({cz})", f"=IFERROR(B{r}/COUNTIFS({PL('A')},$A{r}),0)", f"=SUMIFS({PL('H')},{cz})",
+                      f"=SUMIFS({PL('J')},{cz})", f"=SUMIFS({PL('AA')},{cz})"], fmZ)
+    r += 1
+    linha(wi, r, ["TOTAL", f"=SUM(B{hZ + 1}:B{r - 1})", f"=IFERROR(B{r}/COUNTA({PL('A')}),0)", f"=SUM(D{hZ + 1}:D{r - 1})",
+                  f"=SUM(E{hZ + 1}:E{r - 1})", f"=SUM(F{hZ + 1}:F{r - 1})"], fmZ, total=True)
+
+    r += 2
+    secao(wi, r, "D. Recebimentos, inadimplência e sessões ainda a realizar (planos aprovados vendidos no período)")
     r += 1
     hC = r
     cabecalho(wi, r, ["Unidade", "Valor vendido (R$)", "Pago (R$)", "Vencido e não pago (R$)", "% inadimplência", "A vencer (R$)",
@@ -426,16 +453,16 @@ def montar(planos_aud, linhas, agenda, inicio, destino):
     fmC = [None, BRL, BRL, BRL, PCT, BRL, NUM, BRL]
     for u in unids:
         r += 1
-        linha(wi, r, [u, f"=SUMIFS({PL('L')},{PL('A')},$A{r})", f"=SUMIFS({PL('U')},{PL('A')},$A{r})",
-                      f"=SUMIFS({PL('V')},{PL('A')},$A{r})", f"=IFERROR(D{r}/B{r},0)", f"=SUMIFS({PL('W')},{PL('A')},$A{r})",
-                      f"=SUMIFS({PL('X')},{PL('A')},$A{r})", f"=SUMIFS({PL('Y')},{PL('A')},$A{r})"], fmC)
+        linha(wi, r, [u, f"=SUMIFS({PL('L')},{PL('A')},$A{r})", f"=SUMIFS({PL('X')},{PL('A')},$A{r})",
+                      f"=SUMIFS({PL('Y')},{PL('A')},$A{r})", f"=IFERROR(D{r}/B{r},0)", f"=SUMIFS({PL('Z')},{PL('A')},$A{r})",
+                      f"=SUMIFS({PL('AA')},{PL('A')},$A{r})", f"=SUMIFS({PL('AB')},{PL('A')},$A{r})"], fmC)
     r += 1
     linha(wi, r, ["TOTAL", f"=SUM(B{hC + 1}:B{r - 1})", f"=SUM(C{hC + 1}:C{r - 1})", f"=SUM(D{hC + 1}:D{r - 1})",
                   f"=IFERROR(D{r}/B{r},0)", f"=SUM(F{hC + 1}:F{r - 1})", f"=SUM(G{hC + 1}:G{r - 1})", f"=SUM(H{hC + 1}:H{r - 1})"],
           fmC, total=True)
 
     r += 2
-    secao(wi, r, "D. Sessões realizadas sem receita")
+    secao(wi, r, "E. Sessões realizadas sem receita")
     r += 1
     hD = r
     cabecalho(wi, r, ["Unidade", "Sessões cortesia / 100% desconto", "Valor de tabela das cortesias (R$)", "Avulsos sem venda no dia",
@@ -453,7 +480,7 @@ def montar(planos_aud, linhas, agenda, inicio, destino):
           fmD, total=True)
 
     r += 2
-    secao(wi, r, "E. Agenda – faltas e desmarcações (todos os agendamentos do período)")
+    secao(wi, r, "F. Agenda – faltas e desmarcações (todos os agendamentos do período)")
     r += 1
     hE = r
     cabecalho(wi, r, ["Unidade", "Agendamentos", "Atendidos", "Faltas", "Desmarcados", "Cancelados", "Taxa de faltas",
@@ -469,19 +496,36 @@ def montar(planos_aud, linhas, agenda, inicio, destino):
     wi.cell(row=r + 1, column=1, value="Taxa de faltas = faltas ÷ (atendidos + faltas).").font = FI
 
     r += 3
-    secao(wi, r, "F. Desconto por vendedor (planos aprovados vendidos no período)")
+    secao(wi, r, "G. Validade dos planos (meses entre a venda e o vencimento)")
+    r += 1
+    hV = r
+    cabecalho(wi, r, ["Validade", "Planos", "% dos planos", "Valor vendido (R$)", "Sessões restantes"])
+    fmVal = [None, NUM, PCT, BRL, NUM]
+    faixas_val = [("Até 6 meses", ["<=6"]), ("7 a 12 meses", [">6", "<=12"]), ("13 a 18 meses", [">12", "<=18"]),
+                  ("19 a 24 meses", [">18", "<=24"]), ("Mais de 24 meses", [">24"]), ("Sem validade informada", [""])]
+    tV = hV + len(faixas_val) + 1
+    for faixa, crits in faixas_val:
+        r += 1
+        c = ",".join(f'{PL("AC")},"{x}"' for x in crits)
+        linha(wi, r, [faixa, f"=COUNTIFS({c})", f"=IFERROR(B{r}/$B${tV},0)", f"=SUMIFS({PL('L')},{c})", f"=SUMIFS({PL('AA')},{c})"], fmVal)
+    r += 1
+    linha(wi, r, ["TOTAL"] + [f"=SUM({c}{hV + 1}:{c}{r - 1})" for c in "BCDE"], fmVal, total=True)
+
+    r += 2
+    secao(wi, r, "H. Desconto por vendedor (planos aprovados vendidos no período)")
     r += 1
     cabecalho(wi, r, ["Vendedor", "Planos", "Valor de tabela (R$)", "Valor vendido (R$)", "Desconto médio", "Planos com desconto > 50%",
-                      "% dos planos > 50%"])
-    fmF = [None, NUM, BRL, BRL, PCT, NUM, PCT]
+                      "% dos planos > 50%", "Planos com preço zero"])
+    fmF = [None, NUM, BRL, BRL, PCT, NUM, PCT, NUM]
     qtd_vend = collections.Counter(p["vendedor"] for p in planos_aud)
     for v, _ in sorted(qtd_vend.items(), key=lambda x: (-x[1], x[0])):
         r += 1
         linha(wi, r, [v, f"=COUNTIFS({PL('G')},$A{r})", f"=SUMIFS({PL('J')},{PL('G')},$A{r})", f"=SUMIFS({PL('L')},{PL('G')},$A{r})",
-                      f"=IFERROR(1-D{r}/C{r},0)", f'=COUNTIFS({PL("G")},$A{r},{PL("O")},"SIM")', f"=IFERROR(F{r}/B{r},0)"], fmF)
+                      f"=IFERROR(1-D{r}/C{r},0)", f'=COUNTIFS({PL("G")},$A{r},{PL("O")},"SIM")', f"=IFERROR(F{r}/B{r},0)",
+                      f"=COUNTIFS({PL('G')},$A{r},{PL('L')},0)"], fmF)
 
     r += 2
-    secao(wi, r, "G. Os 20 planos com maior desconto em R$ (links para a aba Planos)")
+    secao(wi, r, "I. Os 20 planos com maior desconto em R$ (links para a aba Planos)")
     r += 1
     cabecalho(wi, r, ["Unidade", "Nº plano", "Data da venda", "Cliente", "Vendedor", "Valor de tabela (R$)", "Preço final (R$)",
                       "Desconto (R$)", "% desconto"])
@@ -493,7 +537,7 @@ def montar(planos_aud, linhas, agenda, inicio, destino):
         linha(wi, r, [f"=Planos!{c}{pr}" for c in "ABCDGJLMN"], fmG)
 
     r += 2
-    secao(wi, r, "H. Os 15 serviços que mais deixaram de ganhar")
+    secao(wi, r, "J. Os 15 serviços que mais deixaram de ganhar")
     r += 1
     cabecalho(wi, r, ["Serviço", "Qtd realizada", "Valor de tabela (R$)", "Valor faturado (R$)", "Deixou de ganhar (R$)", "% de desconto"])
     fmH = [None, NUM, BRL, BRL, BRL, PCT]
@@ -506,7 +550,7 @@ def montar(planos_aud, linhas, agenda, inicio, destino):
         linha(wi, r, [s, f"=COUNTIFS({A('E')},$A{r})", f"=SUMIFS({A('M')},{A('E')},$A{r})", f"=SUMIFS({A('N')},{A('E')},$A{r})",
                       f"=SUMIFS({A('Q')},{A('E')},$A{r})", f"=IFERROR(-SUMIFS({A('O')},{A('E')},$A{r})/C{r},0)"], fmH)
     larguras(wi, [36, 15, 17, 17, 17, 17, 15, 15, 15])
-    for rr in (hA, hB, hC, hD, hE):
+    for rr in (hA, hB, hZ, hC, hD, hE, hV):
         wi.row_dimensions[rr].height = 45
 
     # ---------------- Atendimentos (base)
