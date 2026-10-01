@@ -145,6 +145,8 @@ def coletar(ini, fim, estabs):
                 tipos[tipo or "(sem tipo)"] += 1
                 if "plano" in tipo.casefold() or "pacote" in tipo.casefold():
                     continue  # o plano já entra pelo relatório de planos, com status e preço final
+                if "cancel" in str(i.get("status") or "").casefold():
+                    continue
                 repetido = com_plano and tipo == "Serviço"
                 vendas.append(dict(unidade=UNIDADES[e], data=d, cliente_cod=c,
                                    cliente=nomes.get(c) or nome(campo(v, "nome_cliente", "cliente", "nomeCliente")),
