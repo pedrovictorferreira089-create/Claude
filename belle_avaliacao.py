@@ -1,4 +1,4 @@
-"""Vendas de avaliação x vendas de cabine – API Belle Software.
+"""Vendas de avaliação x Cabine SDR x Cabine – API Belle Software.
 
 Uso: python3 belle_avaliacao.py [dd/mm/aaaa início] [dd/mm/aaaa fim] [codEstab ...]
      padrão: 01/01/2026 a 26/09/2026, unidades Petrópolis, Lagoa Nova, Capim Macio e Norte Shopping.
@@ -7,12 +7,13 @@ Uso: python3 belle_avaliacao.py [dd/mm/aaaa início] [dd/mm/aaaa fim] [codEstab 
 Regras (definidas pela Drenesse):
 - Sessão de avaliação = agendamento do tipo "Avaliação" (ou o serviço AVALIAÇÃO ESTÉTICA).
 - Sessão experimental = agendamento avulso (sem plano) de um dos serviços de entrada de cliente novo (EXPERIMENTAL).
-- Venda de avaliação = venda feita no mesmo dia de uma sessão de avaliação com status Atendido.
-- Venda de cabine = todas as outras: só sessão experimental no dia (mesmo de cliente sem plano anterior), avaliação do
-  dia com falta ou desmarcada, clientes recorrentes e demais compras.
-Comparecimento = atendidos ÷ (atendidos + faltas). Fechamento da avaliação = avaliações atendidas (cliente/dia) com
-venda de plano no dia ÷ avaliações atendidas; da cabine = clientes atendidos na cabine no mês que compraram plano de
-cabine no mesmo mês ÷ clientes atendidos na cabine no mês.
+- Avaliação = venda feita no mesmo dia de uma sessão de avaliação com status Atendido (com ou sem sessão experimental).
+- Cabine SDR = venda no dia de uma sessão experimental atendida quando a avaliação do dia teve falta ou foi desmarcada,
+  ou quando só houve a sessão experimental e o cliente nunca teve plano.
+- Cabine = qualquer outra venda (inclusive sessão experimental de quem já tinha plano).
+Comparecimento = atendidos ÷ (atendidos + faltas). Fechamento da avaliação e da Cabine SDR = sessões atendidas
+(cliente/dia) com venda de plano no dia ÷ sessões atendidas; da Cabine = clientes atendidos na cabine no mês que
+compraram plano de cabine no mesmo mês ÷ clientes atendidos na cabine no mês.
 """
 import collections
 import datetime as dt
@@ -36,18 +37,23 @@ EXPERIMENTAL = {
 SERV_AVALIACAO = {52: "AVALIAÇÃO ESTÉTICA"}  # avaliação lançada como serviço (mesmas avaliadoras do tipo "Avaliação")
 ESTABS = [1, 2, 3, 6]  # unidade Laser (4) fora da análise
 ANTES = 90  # dias antes do início buscados só para achar a avaliação de vendas do começo do período
-AV, CAB, FORA = "Avaliação", "Cabine", "Fora da análise"
-T_AV, T_EXP, T_CAB, T_OUT = "Avaliação", "Sessão experimental", "Sessão de cabine", "Retorno, consulta ou sem serviço"
-GRUPO = {T_AV: AV, T_EXP: CAB, T_CAB: CAB, T_OUT: FORA}
+AV, SDR, CAB, FORA = "Avaliação", "Cabine SDR", "Cabine", "Fora da análise"
+T_AV, T_CAB, T_OUT = "Avaliação", "Sessão de cabine", "Retorno, consulta ou sem serviço"
+T_EXP = "Sessão experimental"  # provisório: vira um dos três abaixo conforme o dia e o histórico do cliente
+T_EXP_AV = "Sessão experimental no dia da avaliação atendida"
+T_SDR = "Sessão experimental SDR"
+T_EXP_REC = "Sessão experimental de quem já tinha plano"
+GRUPO = {T_AV: AV, T_EXP_AV: AV, T_SDR: SDR, T_EXP_REC: CAB, T_CAB: CAB, T_OUT: FORA}
 STATUS = {"Atendido": "Atendido", "Falhou": "Falta", "Desmarcado": "Desmarcado", "Cancelado": "Cancelado"}
 NAO_TINHA = "Não tinha"
 P_AV = "Comprou no dia da avaliação atendida"
 P_AV_FALTA = "Avaliação do dia não atendida – comprou na sessão experimental"
-P_EXP = "Comprou no dia da sessão experimental (sem avaliação)"
+P_EXP_NOVO = "Só sessão experimental no dia – nunca teve plano"
+P_EXP_REC = "Só sessão experimental no dia – já tinha plano"
 P_DEPOIS = "Fez avaliação em outro dia – primeira compra"
 P_REC = "Cliente que já tinha plano"
 P_SEM = "Sem avaliação nem sessão experimental no dia – primeira compra"
-PERFIS = [(AV, P_AV), (CAB, P_AV_FALTA), (CAB, P_EXP), (CAB, P_DEPOIS), (CAB, P_REC), (CAB, P_SEM)]
+PERFIS = [(AV, P_AV), (SDR, P_AV_FALTA), (SDR, P_EXP_NOVO), (CAB, P_EXP_REC), (CAB, P_DEPOIS), (CAB, P_REC), (CAB, P_SEM)]
 
 
 def codigo(x):
@@ -116,26 +122,36 @@ def coletar(ini, fim, estabs):
             x = dict(id=codigo(a.get("idAgendamento")), unidade=UNIDADES[e], data=d, mes=d.replace(day=1),
                      hora=a.get("horarioAgendamento") or "", cliente_cod=c, cliente=nomes[c], servico_cod=sc,
                      servico=nome(a.get("nomeServico")) or nome(a.get("tipoAgendamento")), orc=orc, status_belle=st,
-                     status=STATUS.get(st, "Outros"), prof=nome(a.get("nomeProfissional")), tipo=t, grupo=GRUPO[t])
+                     status=STATUS.get(st, "Outros"), prof=nome(a.get("nomeProfissional")), tipo=t)
             agenda.append(x)
             por_id[x["id"]] = x
     agenda.sort(key=lambda a: (a["data"], a["hora"], a["unidade"], a["cliente"]))
 
-    # Avaliação realizada = cliente + dia com sessão de avaliação atendida. Sessão experimental realizada = cliente + dia
-    # com sessão experimental atendida e sem avaliação atendida (nesse dia a venda é de avaliação).
+    # A sessão experimental pertence ao grupo da venda daquele dia: Avaliação se houve avaliação atendida; Cabine SDR se a
+    # avaliação do dia não foi atendida ou se o cliente nunca teve plano; Cabine se ele já tinha plano.
+    # Avaliação realizada = cliente + dia com avaliação atendida; sessão SDR realizada = cliente + dia com experimental SDR
+    # atendida.
     dia = collections.defaultdict(list)
     for a in agenda:
         dia[(a["cliente_cod"], a["data"])].append(a)
-    av_vis, exp_vis = {}, {}
-    for k, lst in dia.items():
+    av_vis, exp_vis, exp_rec = {}, {}, set()
+    for (c, d), lst in dia.items():
         avs = [a for a in lst if a["tipo"] == T_AV]
-        exps = [a for a in lst if a["tipo"] == T_EXP and a["status"] == "Atendido"]
         atend = [a for a in avs if a["status"] == "Atendido"]
+        tinha = any(x < d for x, _ in compras.get(c, []))
+        for a in lst:
+            if a["tipo"] == T_EXP:
+                a["tipo"] = T_EXP_AV if atend else T_SDR if (avs or not tinha) else T_EXP_REC
+        for a in lst:
+            a["grupo"] = GRUPO[a["tipo"]]
+        exps = [a for a in lst if a["tipo"] in (T_EXP_AV, T_SDR) and a["status"] == "Atendido"]
         if atend:
-            av_vis[k] = dict(atend[0], exp=", ".join(a["servico"] for a in exps), vendas=[])
+            av_vis[(c, d)] = dict(atend[0], exp=", ".join(a["servico"] for a in exps), vendas=[])
         elif exps:
             st_av = ", ".join(sorted({a["status_belle"] for a in avs})) or NAO_TINHA
-            exp_vis[k] = dict(exps[0], outros=", ".join(a["servico"] for a in exps[1:]), av_status=st_av, vendas=[])
+            exp_vis[(c, d)] = dict(exps[0], outros=", ".join(a["servico"] for a in exps[1:]), av_status=st_av, vendas=[])
+        if any(a["tipo"] == T_EXP_REC and a["status"] == "Atendido" for a in lst):
+            exp_rec.add((c, d))
     av_cliente = collections.defaultdict(list)
     for v in sorted(av_vis.values(), key=lambda v: v["data"]):
         av_cliente[v["cliente_cod"]].append(v)
@@ -147,7 +163,9 @@ def coletar(ini, fim, estabs):
             return AV, P_AV, av_vis[(c, d)], None
         ex = exp_vis.get((c, d))
         if ex:
-            return CAB, (P_EXP if ex["av_status"] == NAO_TINHA else P_AV_FALTA), ex, None
+            return SDR, (P_EXP_NOVO if ex["av_status"] == NAO_TINHA else P_AV_FALTA), ex, None
+        if (c, d) in exp_rec:
+            return CAB, P_EXP_REC, None, None
         av = next((v for v in reversed(av_cliente.get(c, [])) if v["data"] < d), None)
         if av and not antes:
             return CAB, P_DEPOIS, None, av
@@ -180,7 +198,8 @@ def coletar(ini, fim, estabs):
     vendas.sort(key=lambda x: (x["data"], x["unidade"], x["cliente"], x["tipo"] != "Plano"))
     for x in vendas:
         x["grupo"], x["perfil"], sessao, av_antes = classificar(x["cliente_cod"], x["data"])
-        x["exp"] = sessao is not None and x["perfil"] != P_AV
+        x["exp"] = any(a["tipo"] in (T_EXP_AV, T_SDR, T_EXP_REC) and a["status"] == "Atendido"
+                       for a in dia.get((x["cliente_cod"], x["data"]), []))
         x["ja_cliente"] = any(d < x["data"] for d, _ in compras.get(x["cliente_cod"], []))
         x["av_data"] = av_antes["data"] if av_antes else None
         x["dias"] = (x["data"] - av_antes["data"]).days if av_antes else None
@@ -219,20 +238,20 @@ def coletar(ini, fim, estabs):
     return dict(vendas=vendas,
                 av_vis=sorted((v for v in av_vis.values() if v["data"] >= ini), key=lambda v: (v["data"], v["hora"], v["unidade"])),
                 exp_vis=sorted((v for v in exp_vis.values() if v["data"] >= ini), key=lambda v: (v["data"], v["hora"], v["unidade"])),
-                agenda_det=[a for a in periodo if a["tipo"] in (T_AV, T_EXP)], cab_mes=cab_mes, compra_cab=compra_cab,
+                agenda_det=[a for a in periodo if a["tipo"] in (T_AV, T_EXP_AV, T_SDR, T_EXP_REC)], cab_mes=cab_mes, compra_cab=compra_cab,
                 resumo=resumo, diag=diag, nomes=nomes)
 
 
 # ---------------------------------------------------------------- planilha
-ABAS = {"V": "Vendas", "AV": "Avaliações", "EX": "Sessões experimentais", "AA": "Agenda avaliação-experimental",
+ABAS = {"V": "Vendas", "AV": "Avaliações", "EX": "Sessões SDR", "AA": "Agenda avaliação-experimental",
         "AR": "Agenda resumo", "CC": "Clientes cabine"}
 DIM = {"unidade": {"AR": "A", "AV": "A", "EX": "A", "CC": "A", "V": "A"},
        "mes": {"AR": "B", "AV": "C", "EX": "C", "CC": "B", "V": "C"}}
-EXP = "Experimental"
 # Como cada grupo é lido nas abas de base: agenda (coluna, valor), base e "fechou" do fechamento, filtros das vendas.
-GR = {AV: dict(ar=("C", AV), base=("AV", "A"), fech=("AV", "J"), vendas=[("L", AV)]),
-      CAB: dict(ar=("C", CAB), base=("CC", "A"), fech=("CC", "F"), vendas=[("L", CAB)]),
-      EXP: dict(ar=("D", T_EXP), base=("EX", "A"), fech=("EX", "L"), vendas=[("L", CAB), ("N", "Sim")])}
+# O comparecimento da Avaliação conta só as sessões de avaliação (não as experimentais feitas no mesmo dia).
+GR = {AV: dict(ar=("D", T_AV), base=("AV", "A"), fech=("AV", "J"), vendas=[("L", AV)]),
+      SDR: dict(ar=("C", SDR), base=("EX", "A"), fech=("EX", "L"), vendas=[("L", SDR)]),
+      CAB: dict(ar=("C", CAB), base=("CC", "A"), fech=("CC", "F"), vendas=[("L", CAB)])}
 
 
 def exemplos(d, fim):
@@ -257,11 +276,14 @@ def exemplos(d, fim):
             f"Avaliação atendida • {planos(v)}", AV, "Sessão de avaliação atendida e compra no mesmo dia.")
     for v in rec([v for v in ex if v["vendas"] and v["av_status"] != NAO_TINHA], 2):
         add("Avaliação não atendida + experimental, comprou", v["unidade"], v["data"], v["cliente"],
-            f"Avaliação ({v['av_status']}) + {v['servico']}", f"Experimental atendida • {planos(v)}", CAB,
-            f"A sessão de avaliação do dia ficou como '{v['av_status']}': a venda entra como cabine.")
-    for v in rec([v for v in ex if v["vendas"] and v["av_status"] == NAO_TINHA and not v["ja_cliente"]], 2):
-        add("Só sessão experimental, comprou (sem plano antes)", v["unidade"], v["data"], v["cliente"], v["servico"],
-            f"Experimental atendida • {planos(v)}", CAB, "Não teve sessão de avaliação no dia: a venda entra como cabine.")
+            f"Avaliação ({v['av_status']}) + {v['servico']}", f"Experimental atendida • {planos(v)}", SDR,
+            f"A sessão de avaliação do dia ficou como '{v['av_status']}' e a experimental foi atendida.")
+    for v in rec([v for v in ex if v["vendas"] and v["av_status"] == NAO_TINHA], 2):
+        add("Só sessão experimental, nunca teve plano, comprou", v["unidade"], v["data"], v["cliente"], v["servico"],
+            f"Experimental atendida • {planos(v)}", SDR, "Sem avaliação no dia e nenhum plano aprovado antes.")
+    for x in rec([x for x in vd if x["perfil"] == P_EXP_REC and x["tipo"] == "Plano" and x["conta"]], 2):
+        add("Só sessão experimental, já tinha plano, comprou", x["unidade"], x["data"], x["cliente"], x["desc"],
+            f"Plano {reais(x['valor'])}", CAB, "Sessão experimental sem avaliação no dia, mas a cliente já tinha plano aprovado.")
     for v in rec([v for v in av if not v["vendas"] and v["dias_compra"] is None and v["data"] <= fim - dt.timedelta(days=30)], 2):
         add("Avaliação atendida sem compra", v["unidade"], v["data"], v["cliente"], f"Avaliação ({v['prof']})",
             "Avaliação atendida • não comprou", AV, f"Entra na base do fechamento da avaliação; não comprou plano até {fim:%d/%m/%Y}.")
@@ -286,7 +308,7 @@ def montar(d, ini, fim, estabs, destino):
     lista_meses = meses(ini, fim)
     vendas, av_vis, exp_vis, agenda_det = d["vendas"], d["av_vis"], d["exp_vis"], d["agenda_det"]
     res = d["resumo"]
-    tipos_ordem = [T_AV, T_EXP, T_CAB, T_OUT]
+    tipos_ordem = [T_AV, T_EXP_AV, T_SDR, T_EXP_REC, T_CAB, T_OUT]
     resumo_ag = sorted({(u, m, t) for (u, m, t, _) in res}, key=lambda x: (unids.index(x[0]), x[1], tipos_ordem.index(x[2])))
     cab = sorted(d["cab_mes"].items(), key=lambda x: (unids.index(x[0][0]), x[0][1], x[0][2]))
     n = {"V": len(vendas), "AV": len(av_vis), "EX": len(exp_vis), "AA": len(agenda_det), "AR": len(resumo_ag), "CC": len(cab)}
@@ -318,39 +340,35 @@ def montar(d, ini, fim, estabs, destino):
     # ---------------- Resumo
     rs = wb.active
     rs.title = "Resumo"
-    titulo(rs, "Drenesse – Vendas de Avaliação x Vendas de Cabine", fonte)
+    titulo(rs, "Drenesse – Vendas de Avaliação x Cabine SDR x Cabine", fonte)
     secao(rs, 4, "1. Comparativo geral")
     h = 5
-    cabecalho(rs, h, ["Indicador", "Avaliação", "Cabine", "Total (avaliação + cabine)", "Dentro da cabine: sessões experimentais",
-                      "Como é calculado"])
-    fa, fc, fe = formulas(AV), formulas(CAB), formulas(EXP)
+    cabecalho(rs, h, ["Indicador", AV, SDR, CAB, "Total", "Como é calculado"])
+    fs = [formulas(g) for g in (AV, SDR, CAB)]
     r1 = h + 1
     ind = [
-        ("Agendamentos", "agend", NUM, "soma", "Avaliação = agendamentos tipo 'Avaliação' (e serviço AVALIAÇÃO ESTÉTICA). Cabine = sessões de serviço, inclusive as experimentais."),
+        ("Agendamentos", "agend", NUM, "soma", "Avaliação = sessões de avaliação (tipo 'Avaliação' e serviço AVALIAÇÃO ESTÉTICA). Cabine SDR = sessões experimentais de quem nunca teve plano ou com avaliação do dia não atendida. Cabine = demais sessões de serviço."),
         ("Atendidos", "atend", NUM, "soma", "Status 'Atendido' no Belle."),
         ("Faltas (não compareceram)", "faltas", NUM, "soma", "Status 'Falhou' no Belle."),
         ("Desmarcados / cancelados", "desm", NUM, "soma", "Status 'Desmarcado' ou 'Cancelado' (não entram na taxa de comparecimento)."),
         ("Taxa de comparecimento", f"=IFERROR({{c}}{r1 + 1}/({{c}}{r1 + 1}+{{c}}{r1 + 2}),0)", PCT, "taxa", "Atendidos ÷ (atendidos + faltas)."),
         ("Comparecimento sobre todos os agendamentos", f"=IFERROR({{c}}{r1 + 1}/{{c}}{r1},0)", PCT, "taxa", "Atendidos ÷ agendamentos (inclui desmarcados, cancelados e outros status)."),
-        ("Base do fechamento", "base", NUM, "-", "Avaliação: avaliações atendidas (cliente/dia). Cabine: clientes atendidos na cabine em cada mês (cliente/mês). Experimental: sessões experimentais atendidas sem avaliação atendida no dia (cliente/dia)."),
-        ("Fecharam (compraram plano)", "fech", NUM, "-", "Avaliação e experimental: compraram plano no mesmo dia. Cabine: compraram plano de cabine no mesmo mês em que foram atendidos."),
+        ("Base do fechamento", "base", NUM, "-", "Avaliação: avaliações atendidas (cliente/dia). Cabine SDR: sessões experimentais SDR atendidas (cliente/dia). Cabine: clientes atendidos na cabine em cada mês (cliente/mês)."),
+        ("Fecharam (compraram plano)", "fech", NUM, "-", "Avaliação e Cabine SDR: compraram plano no mesmo dia. Cabine: compraram plano de cabine no mesmo mês em que foram atendidos."),
         ("Taxa de fechamento", f"=IFERROR({{c}}{r1 + 7}/{{c}}{r1 + 6},0)", PCT, "-", "Fecharam ÷ base do fechamento."),
         ("Planos vendidos (aprovados)", "planos", NUM, "soma", "Planos com status Aprovado, pela data da venda."),
         ("Faturamento em planos (R$)", "fatpl", BRL, "soma", "Preço final dos planos aprovados."),
         ("Ticket médio do plano (R$)", f"=IFERROR({{c}}{r1 + 10}/{{c}}{r1 + 9},0)", BRL, "taxa", "Faturamento em planos ÷ planos vendidos."),
         ("Faturamento avulso (R$)", "avulso", BRL, "soma", "Serviços vendidos à parte (Vendas Detalhado, valor líquido)."),
         ("Faturamento total (R$)", f"={{c}}{r1 + 10}+{{c}}{r1 + 12}", BRL, "soma", "Planos + avulso."),
-        ("% do faturamento total", f"=IFERROR({{c}}{r1 + 13}/$D${r1 + 13},0)", PCT, "taxa", "Participação no faturamento total (avaliação + cabine)."),
+        ("% do faturamento total", f"=IFERROR({{c}}{r1 + 13}/$E${r1 + 13},0)", PCT, "taxa", "Participação no faturamento total."),
         ("Planos não aprovados (fora do faturamento)", "naoapr", NUM, "soma", "Planos Pendentes/Suspensos/Cancelados vendidos no período – só informativo."),
     ]
     for i, (lbl, chave, fmt, tot, expl) in enumerate(ind):
         r = r1 + i
-        if chave in fa:
-            vb, vc, ve = "=" + fa[chave], "=" + fc[chave], "=" + fe[chave]
-        else:
-            vb, vc, ve = chave.format(c="B"), chave.format(c="C"), chave.format(c="E")
-        vd = f"=B{r}+C{r}" if tot == "soma" else chave.format(c="D") if tot == "taxa" else "—"
-        linha(rs, r, [lbl, vb, vc, vd, ve, expl], [None, fmt, fmt, fmt, fmt, None])
+        vals = ["=" + f[chave] if chave in f else chave.format(c=col) for f, col in zip(fs, "BCD")]
+        ve = f"=B{r}+C{r}+D{r}" if tot == "soma" else chave.format(c="E") if tot == "taxa" else "—"
+        linha(rs, r, [lbl] + vals + [ve, expl], [None, fmt, fmt, fmt, fmt, None])
         rs.cell(row=r, column=6).font = FI
     r = r1 + len(ind) - 1
 
@@ -360,7 +378,7 @@ def montar(d, ini, fim, estabs, destino):
     cabecalho(rs, r, ["Prazo", "Avaliações atendidas", "Compraram plano", "Taxa", "Observação"])
     tb = f"COUNTIFS({rg('AV', 'A')},\"<>\")"
     for lbl, col, obs in [("No dia da avaliação (venda de avaliação)", "J", "É a taxa de fechamento da avaliação no comparativo."),
-                          ("Em até 7 dias", "O", "Inclui o dia. Compras depois do dia da avaliação contam como cabine."),
+                          ("Em até 7 dias", "O", "Inclui o dia. Compras em outro dia contam como Cabine SDR ou Cabine, conforme a regra."),
                           ("Em até 30 dias", "P", f"Avaliações do fim do período têm menos de 30 dias até {fim:%d/%m/%Y}.")]:
         r += 1
         linha(rs, r, [lbl, f"={tb}", f"=COUNTIFS({rg('AV', col)},\"Sim\")", f"=IFERROR(C{r}/B{r},0)", obs], [None, NUM, NUM, PCT, None])
@@ -387,8 +405,8 @@ def montar(d, ini, fim, estabs, destino):
     def bloco(ws, r, grupo, dim, chaves, fmt_chave):
         """Tabela de um grupo por unidade ou por mês. Devolve a linha do total."""
         rot = {AV: ("Avaliações atendidas (cliente/dia)", "Avaliações que fecharam"),
-               CAB: ("Clientes atendidos (cliente/mês)", "Clientes que compraram plano"),
-               EXP: ("Experimentais atendidas sem avaliação (cliente/dia)", "Experimentais que fecharam")}[grupo]
+               SDR: ("Sessões SDR atendidas (cliente/dia)", "Sessões SDR que fecharam"),
+               CAB: ("Clientes atendidos (cliente/mês)", "Clientes que compraram plano")}[grupo]
         cabecalho(ws, r, ["Unidade" if dim == "unidade" else "Mês", "Agendamentos", "Atendidos", "Faltas", "Desmarcados / cancelados",
                           "Taxa de comparecimento", rot[0], rot[1], "Taxa de fechamento", "Planos vendidos",
                           "Faturamento em planos (R$)", "Ticket médio do plano (R$)", "Faturamento avulso (R$)", "Faturamento total (R$)"])
@@ -412,18 +430,18 @@ def montar(d, ini, fim, estabs, destino):
     secao(rs, r, "4a. Avaliação por unidade")
     r = bloco(rs, r + 1, AV, "unidade", unids, None)
     r += 2
-    secao(rs, r, "4b. Cabine por unidade (inclui as sessões experimentais)")
-    r = bloco(rs, r + 1, CAB, "unidade", unids, None)
+    secao(rs, r, "4b. Cabine SDR por unidade")
+    r = bloco(rs, r + 1, SDR, "unidade", unids, None)
     r += 2
-    secao(rs, r, "4c. Dentro da cabine: sessões experimentais por unidade")
-    r = bloco(rs, r + 1, EXP, "unidade", unids, None)
+    secao(rs, r, "4c. Cabine por unidade")
+    r = bloco(rs, r + 1, CAB, "unidade", unids, None)
     r += 2
     notas = [
         "COMO LER",
-        "• Venda de avaliação = compra feita no mesmo dia de uma sessão de avaliação com status Atendido (com ou sem sessão experimental no dia).",
-        "• Venda de cabine = todas as outras: só sessão experimental no dia, avaliação do dia com falta ou desmarcada, clientes que já tinham plano e demais compras.",
-        "• Fechamento da cabine é medido por cliente/mês: dos clientes atendidos na cabine no mês, quantos compraram plano de cabine no mesmo mês.",
-        "• Os números são fórmulas sobre as abas de base (Vendas, Avaliações, Sessões experimentais, Agenda resumo, Clientes cabine).",
+        "• Avaliação = compra no mesmo dia de uma sessão de avaliação com status Atendido (com ou sem sessão experimental no dia).",
+        "• Cabine SDR = compra no dia da sessão experimental quando a avaliação do dia teve falta ou foi desmarcada, ou quando só houve a experimental e a cliente nunca teve plano.",
+        "• Cabine = qualquer outra compra (inclusive sessão experimental de quem já tinha plano). Fechamento medido por cliente/mês.",
+        "• Os números são fórmulas sobre as abas de base (Vendas, Avaliações, Sessões SDR, Agenda resumo, Clientes cabine).",
         "• Passo a passo completo na aba Metodologia; casos reais na aba Exemplos.",
     ]
     for i, t in enumerate(notas):
@@ -435,19 +453,19 @@ def montar(d, ini, fim, estabs, destino):
 
     # ---------------- Mensal
     wm = wb.create_sheet("Mensal")
-    titulo(wm, "Avaliação x Cabine – mês a mês", fonte)
+    titulo(wm, "Avaliação x Cabine SDR x Cabine – mês a mês", fonte)
     r = 4
-    for g, lbl in [(AV, "A. Avaliação"), (CAB, "B. Cabine (inclui as sessões experimentais)"), (EXP, "C. Dentro da cabine: sessões experimentais")]:
+    for g, lbl in [(AV, "A. Avaliação"), (SDR, "B. Cabine SDR"), (CAB, "C. Cabine")]:
         secao(wm, r, lbl)
         r = bloco(wm, r + 1, g, "mes", lista_meses, MES) + 2
     larguras(wm, [11, 14, 12, 10, 14, 14, 18, 14, 13, 11, 17, 15, 16, 17])
     wm.freeze_panes = "B6"
 
     # ---------------- Serviços experimentais
-    wsv = wb.create_sheet("Serviços experimentais")
-    titulo(wsv, "Sessões experimentais por serviço – comparecimento e fechamento no dia", fonte)
+    wsv = wb.create_sheet("Serviços SDR")
+    titulo(wsv, "Cabine SDR por serviço experimental – comparecimento e fechamento no dia", fonte)
     cabecalho(wsv, 4, ["ID do serviço", "Serviço", "Agendamentos", "Atendidos", "Faltas", "Desmarcados / cancelados",
-                       "Taxa de comparecimento", "Experimentais atendidas sem avaliação (cliente/dia)", "Fecharam no dia",
+                       "Taxa de comparecimento", "Sessões SDR atendidas (cliente/dia)", "Fecharam no dia",
                        "Taxa de fechamento", "Planos vendidos", "Valor vendido (R$)", "Ticket médio (R$)"])
     fms = ["0", None, NUM, NUM, NUM, NUM, PCT, NUM, NUM, PCT, NUM, BRL, BRL]
     nomes_srv = {}
@@ -456,7 +474,7 @@ def montar(d, ini, fim, estabs, destino):
     r = 4
     for cod_s, nm in EXPERIMENTAL.items():
         r += 1
-        aa = f"{rg('AA', 'H')},$A{r},{rg('AA', 'G')},\"{T_EXP}\""
+        aa = f"{rg('AA', 'H')},$A{r},{rg('AA', 'G')},\"{T_SDR}\""
         ex_ = f"{rg('EX', 'F')},$A{r}"
         linha(wsv, r, [cod_s, nomes_srv.get(cod_s, nm), f"=COUNTIFS({aa})", f"=COUNTIFS({aa},{rg('AA', 'K')},\"Atendido\")",
                        f"=COUNTIFS({aa},{rg('AA', 'K')},\"Falta\")",
@@ -468,8 +486,8 @@ def montar(d, ini, fim, estabs, destino):
     s = {c: f"=SUM({c}5:{c}{r - 1})" for c in "CDEFHIKL"}
     linha(wsv, r, ["", "TOTAL", s["C"], s["D"], s["E"], s["F"], f"=IFERROR(D{r}/(D{r}+E{r}),0)", s["H"], s["I"],
                    f"=IFERROR(I{r}/H{r},0)", s["K"], s["L"], f"=IFERROR(L{r}/K{r},0)"], fms, total=True)
-    wsv.cell(row=r + 2, column=1, value="Sessões experimentais atendidas no mesmo dia de uma avaliação atendida não entram aqui: "
-             "nesses dias a venda é de avaliação.").font = FI
+    wsv.cell(row=r + 2, column=1, value="Ficam fora daqui as sessões experimentais no dia de uma avaliação atendida (Avaliação) e as de "
+             "quem já tinha plano (Cabine) – ver 'Tipo de sessão' na aba Agenda avaliação-experimental.").font = FI
     wsv.cell(row=r + 3, column=1, value="Sessões com esses IDs vinculadas a um plano são sessões de cabine comuns (não experimentais).").font = FI
     larguras(wsv, [11, 46, 13, 11, 9, 14, 14, 18, 10, 13, 10, 16, 14])
     wsv.row_dimensions[4].height = 45
@@ -496,18 +514,20 @@ def montar(d, ini, fim, estabs, destino):
         f"   • A agenda também foi lida nos {ANTES} dias anteriores ao início, só para saber quem já tinha feito avaliação.",
         "2. Cada agendamento foi classificado:",
         "   • Sessão de avaliação = agendamento do tipo 'Avaliação' no Belle, ou o serviço 52 – AVALIAÇÃO ESTÉTICA (feito pelas mesmas avaliadoras).",
-        "   • Sessão experimental = um dos 6 IDs abaixo, sem plano vinculado (agendamento avulso).",
+        "   • Sessão experimental = um dos 6 IDs abaixo, sem plano vinculado (agendamento avulso). Ela entra no grupo da venda do dia:",
+        "     Avaliação (se houve avaliação atendida no dia), Cabine SDR (avaliação do dia não atendida, ou cliente que nunca teve plano)",
+        "     ou Cabine (cliente que já tinha plano).",
         "   • Sessão de cabine = qualquer outro agendamento de serviço, inclusive sessões com os 6 IDs que estão dentro de um plano.",
         "   • Retorno, consulta e agendamentos sem serviço ficam fora das contas (ver diagnóstico).",
         "3. Comparecimento = atendidos ÷ (atendidos + faltas), pelo status do Belle (Atendido, Falhou, Desmarcado, Cancelado).",
         "4. Cada venda (plano ou serviço avulso) foi olhada pelo cliente e pelo dia da compra:",
         "   • Teve sessão de avaliação com status Atendido no dia → venda de AVALIAÇÃO (com ou sem sessão experimental no dia).",
-        "   • Avaliação do dia com falta ou desmarcada, mas sessão experimental atendida → venda de CABINE.",
-        "   • Só sessão experimental no dia, sem avaliação (mesmo para quem nunca comprou plano) → venda de CABINE.",
-        "   • Qualquer outra compra (quem já tinha plano, quem fez avaliação em outro dia, compras sem sessão no dia) → venda de CABINE.",
+        "   • Avaliação do dia com falta ou desmarcada, mas sessão experimental atendida → venda de CABINE SDR.",
+        "   • Só sessão experimental no dia, para quem nunca teve plano aprovado → venda de CABINE SDR.",
+        "   • Qualquer outra compra (experimental de quem já tinha plano, renovações, avaliação em outro dia, sem sessão no dia) → venda de CABINE.",
         "5. Fechamento:",
         "   • Avaliação: avaliações atendidas (cliente/dia) com plano comprado no dia ÷ avaliações atendidas. Também em até 7 e 30 dias.",
-        "   • Sessão experimental: experimentais atendidas sem avaliação atendida no dia, com plano comprado no dia ÷ essas experimentais.",
+        "   • Cabine SDR: sessões experimentais SDR atendidas (cliente/dia) com plano comprado no dia ÷ essas sessões.",
         "   • Cabine: para cada mês, clientes atendidos na cabine que compraram plano de cabine no mesmo mês ÷ clientes atendidos na cabine.",
         "6. Faturamento = valor vendido na data da venda: preço final dos planos Aprovados + valor líquido dos serviços avulsos.",
         "   Planos Pendentes/Suspensos/Cancelados aparecem na aba Vendas, mas ficam fora do faturamento e do fechamento.",
@@ -550,7 +570,7 @@ def montar(d, ini, fim, estabs, destino):
     # ---------------- Bases
     base(wb.create_sheet(ABAS["V"]),
          ["Unidade", "Data da venda", "Mês", "Cliente", "Cód. cliente", "Tipo", "Descrição", "Nº plano", "Status do plano", "Vendedor",
-          "Valor (R$)", "Grupo", "Situação no dia da compra", "Venda na sessão experimental?", "Já tinha plano antes?",
+          "Valor (R$)", "Grupo", "Situação no dia da compra", "Sessão experimental no dia?", "Já tinha plano antes?",
           "Avaliação anterior (data)", "Dias após a avaliação", "Avaliação ligada ao plano no Belle (ID)", "Conta no faturamento?",
           "Observação"],
          [[x["unidade"], x["data"], x["data"].replace(day=1), x["cliente"], x["cliente_cod"], x["tipo"], x["desc"], x["orc"] or None,
@@ -614,7 +634,7 @@ if __name__ == "__main__":
     out = os.environ.get("BELLE_OUT", "Avaliacao_x_Cabine_Drenesse.xlsx")
     montar(dados, ini, fim, estabs, out)
     dg = dados["diag"]
-    print(f"{len(dados['vendas'])} vendas, {len(dados['av_vis'])} avaliações atendidas, {len(dados['exp_vis'])} experimentais "
-          f"atendidas sem avaliação -> {out}")
+    print(f"{len(dados['vendas'])} vendas, {len(dados['av_vis'])} avaliações atendidas, {len(dados['exp_vis'])} sessões SDR "
+          f"atendidas -> {out}")
     print(f"Planos ligados a atendimento no Belle: {dg['ligados']}; a sessão de avaliação atendida no dia: {dg['lig_av']} "
           f"(classificados como avaliação: {dg['lig_av_ok']})")
