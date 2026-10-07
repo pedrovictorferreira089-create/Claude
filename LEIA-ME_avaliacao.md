@@ -134,3 +134,38 @@ Conferências feitas:
   - `belle_sabados.py`: faturamento dos sábados;
   - `belle_servicos.py`: ranking de serviços;
   - `belle_auditoria.py`: auditoria de preços.
+
+## Análises feitas depois da planilha (para consulta)
+
+### Faturamento de 2026 pelo Belle (01/01 a 05/10, 5 unidades)
+
+- **Fonte:** relatório Vendas Detalhado, pela data da venda.
+- **Vendido (planos aprovados + serviços avulsos):**
+  - R$ 6.588.008,63 nas 5 unidades;
+  - R$ 6.362.282,13 sem a Laser;
+  - os planos suspensos (R$ 462.376,72) ficaram de fora.
+- **Recebido:**
+  - **Regra:** parcelas com `confirmado = Sim` e data de confirmação em 2026, sem contar a mesma parcela duas vezes (`idParcela`).
+  - **Fontes:** as parcelas vêm do `venda_planos` e do `vendas_detalhado`.
+  - **Valor:** R$ 6.792.555,45 (R$ 6.623.018,95 sem a Laser), dos quais R$ 264.910 vêm de vendas feitas em 2025.
+  - **Cartão:** no Belle, venda no cartão aparece confirmada já na data da venda.
+- **Em aberto:** R$ 417.837,43 em parcelas que venceram em 2026 e ainda não estão confirmadas.
+
+### Comparação com o dashboard (sistemacomercial-pi.vercel.app, dados do Lever)
+
+- **Faturamento comercial:**
+  - o painel mostra R$ 2.585.107,58 em 2026 até 26/09;
+  - o total do Belle é R$ 6.164.377,61, porque inclui R$ 3.666.272 de clientes que já tinham plano (renovações), que não passam pelos funis do Lever;
+  - só as clientes que nunca tinham comprado plano somam R$ 2.498.105, perto do painel.
+- **Quadro Avaliação x Cabine SDR x Cabine na página SDR (28/09 a 03/10):**
+  - é coerente com a regra, porque o funil SDR só tem clientes novos;
+  - no Belle inteiro, na mesma semana, a Cabine deu 48 planos e R$ 98.627, dos quais R$ 71.633 são renovações.
+- **Pontos para corrigir no painel:**
+  1. O quadro mostra 20 vendas e R$ 66.808,52; os cards mostram 24 vendas e R$ 69.709,52. Sobra 1 venda de R$ 2.901 sem explicação.
+  2. A taxa de conversão tem numerador maior que a quantidade de vendas: Avaliação 15 contra 13, Cabine 13 contra 4. As duas colunas precisam usar a mesma base de vendas.
+  3. Falta o comparecimento (atendidos ÷ (atendidos + faltas)). A coluna "Agendamentos" soma todas as situações.
+
+### Próximo passo
+
+- Cadastrar `BELLE_TOKEN` e `LEVER_TOKEN` no ambiente (Network secrets ou variáveis de ambiente) e abrir uma sessão nova.
+- Com o acesso ao Lever, casar os cards com as vendas do Belle e conferir o painel venda por venda.
