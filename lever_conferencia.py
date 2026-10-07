@@ -5,8 +5,8 @@ Uso: python3 lever_conferencia.py [dd/mm/aaaa início] [dd/mm/aaaa fim]
      Gera Conferencia_Lever_Belle.xlsx (ou BELLE_OUT).
 
 Casamento: telefone do contato do card no Lever com o celular/telefone do cliente no Belle (DDD + 8 últimos dígitos,
-o que ignora o nono dígito); sem telefone em comum, pelo nome completo. Cada card fica com o plano aprovado do cliente
-mais próximo da data de fechamento do card (até JANELA dias). A classificação da venda (Avaliação, Cabine SDR, Cabine)
+o que ignora o nono dígito); sem telefone em comum, pelo nome completo. Cada card fica com os planos aprovados do cliente
+no dia de venda mais próximo da data de fechamento do card (até JANELA dias). A classificação da venda (Avaliação, Cabine SDR, Cabine)
 vem de belle_avaliacao.coletar().
 """
 import collections
@@ -86,11 +86,13 @@ def conferir(ini, fim):
             via = "Nome" if cli else ""
         cand = sorted((p for k in cli for p in planos.get(k, [])), key=lambda p: (abs((p["data"] - fech).days), p["data"]))
         plano = cand[0] if cand and abs((cand[0]["data"] - fech).days) <= JANELA else None
+        do_dia = [p for p in cand if plano and p["data"] == plano["data"] and p["cliente_cod"] == plano["cliente_cod"]]
         if plano:
             usados.setdefault(plano["orc"], []).append(c["key"])
         linhas.append(dict(card=c, fech=fech, aval=data_campo(lever_api.campo(c, "data-de-avalia") or lever_api.campo(c, "data-avalia")),
                            unidade=lever_api.campo(c, "unidade"), valor=float(c.get("monetaryAmount") or 0),
                            cliente=", ".join(sorted(str(k) for k in cli)), via=via, plano=plano, cand=cand,
+                           planos=do_dia, valor_belle=sum(p["valor"] for p in do_dia),
                            tem_fone=any(fones)))
     for x in linhas:
         p = x["plano"]
@@ -119,12 +121,12 @@ def montar(d, ini, fim, destino):
     secao(ws, r, "Cards do período")
     r += 1
     resumo = [("Cards", len(per), sum(x["valor"] for x in per)),
-              ("Casados com plano do Belle", sum(1 for x in per if x["plano"]), sum(x["plano"]["valor"] for x in per if x["plano"]))]
+              ("Casados com plano do Belle", sum(1 for x in per if x["plano"]), sum(x["valor_belle"] for x in per))]
     for motivo, n in collections.Counter(x["motivo"].split(":")[0] for x in per if x["motivo"]).most_common():
         resumo.append((motivo, n, sum(x["valor"] for x in per if x["motivo"].split(":")[0] == motivo)))
     for g in GRUPOS:
         sel = [x for x in per if x["plano"] and x["plano"]["grupo"] == g]
-        resumo.append((f"  {g}", len(sel), sum(x["plano"]["valor"] for x in sel)))
+        resumo.append((f"  {g}", len(sel), sum(x["valor_belle"] for x in sel)))
     for rot, n, v in resumo:
         ws.cell(r, 1, rot)
         ws.cell(r, 2, n)
@@ -135,14 +137,14 @@ def montar(d, ini, fim, destino):
 
     cols = ["Card", "Fase", "Título", "Unidade (Lever)", "Data de fechamento (Lever)", "Data de avaliação (Lever)",
             "Valor no Lever", "Casado por", "Cód. cliente Belle", "Data da venda (Belle)", "Unidade (Belle)", "Plano",
-            "Valor do plano (Belle)", "Diferença Lever − Belle", "Grupo (regras Belle)", "Perfil da venda", "Dias card x venda",
+            "Valor dos planos do dia (Belle)", "Diferença Lever − Belle", "Grupo (regras Belle)", "Perfil da venda", "Dias card x venda",
             "No período do painel", "Observação"]
     dados = []
     for x in sorted(linhas, key=lambda x: (x["fech"], x["card"]["key"]), reverse=True):
         p, c = x["plano"], x["card"]
         dados.append([c["key"], c["fase"], nome(c.get("title") or ""), x["unidade"], x["fech"], x["aval"], x["valor"],
-                      x["via"] or None, x["cliente"] or None, p and p["data"], p and p["unidade"], p and p["desc"],
-                      p and p["valor"], p and round(x["valor"] - p["valor"], 2), p and p["grupo"], p and p["perfil"],
+                      x["via"] or None, x["cliente"] or None, p and p["data"], p and p["unidade"], p and " + ".join(q["desc"] for q in x["planos"]),
+                      p and x["valor_belle"], p and round(x["valor"] - x["valor_belle"], 2), p and p["grupo"], p and p["perfil"],
                       p and (p["data"] - x["fech"]).days, "Sim" if ini <= x["fech"] <= fim else "Não", x["motivo"]])
     fm = [None, None, None, None, DATA, DATA, BRL, None, None, DATA, None, None, BRL, BRL, None, None, NUM, None, None]
     base(wb.create_sheet("Cards"), cols, dados, fm, "Cards", [11, 18, 30, 15, 13, 13, 13, 10, 12, 13, 15, 30, 13, 13, 12, 45, 9, 9, 60])
