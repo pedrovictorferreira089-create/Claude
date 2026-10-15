@@ -13,6 +13,7 @@ Regras:
 - Sessões usadas = saldo do Belle (vendidas − restantes − agendamentos futuros) nos serviços pagos (sem cortesia),
   distribuídas pelas datas dos atendimentos realizados de cada plano. Plano suspenso conta só o que chegou a usar.
 - Dias sem vir = dias desde a última sessão realizada ou a última compra, o que for mais recente.
+- A aba 'Com avulsos' repete as taxas contando também serviços avulsos e produtos pagos nas vendas.
 """
 import collections
 import datetime as dt
@@ -131,6 +132,23 @@ def carregar():
             if c and (c not in cadastro or (v.get("data_venda") or "") >= cadastro[c][0]):
                 cadastro[c] = (v.get("data_venda") or "", dc)
     return planos, validade, sessoes, futuros, visitas, agendado, {c: dc for c, (_, dc) in cadastro.items()}
+
+
+def extras():
+    """Serviços avulsos e produtos pagos nas vendas, fora de planos: {"Serviço": {(cliente, dia): valor}, "Produto": {...}}."""
+    out = {"Serviço": collections.Counter(), "Produto": collections.Counter()}
+    vistos = set()
+    for e in UNIDADES:
+        for v in historico("vendas_detalhado", "estab", e, HOJE):
+            c = v.get("cod_cliente") or (v.get("dados_cliente") or {}).get("codigo")
+            if v["id_venda"] in vistos or not c or not v.get("data_venda"):
+                continue
+            vistos.add(v["id_venda"])
+            d = dt.date.fromisoformat(v["data_venda"][:10])
+            for i in v.get("itens_venda") or []:
+                if i["tipo"] in out and d <= HOJE and br(i["valor_liquido"]) > 0:
+                    out[i["tipo"]][(c, d)] += br(i["valor_liquido"])
+    return out
 
 
 def vendido(p):
@@ -345,6 +363,41 @@ def numeros(compras, clientes, trocas):
     return out
 
 
+def comparar_avulsos(compras, extras):
+    """Recompra contando só planos, planos + serviços avulsos e tudo (com produtos), e o que acontece com quem
+    começa por um serviço avulso. Compra = dia com pelo menos uma dessas vendas pagas."""
+    planos = {(x["cliente"], x["data"]): x["valor"] for x in compras}
+    av, pr = extras["Serviço"], extras["Produto"]
+
+    def dias(*fontes):
+        d = collections.defaultdict(set)
+        for f in fontes:
+            for c, dia in f:
+                d[c].add(dia)
+        return {c: sorted(x) for c, x in d.items()}
+
+    def taxas(cl):
+        rec = [x for x in cl.values() if len(x) > 1]
+        r = {"clientes": len(cl), "voltaram": len(rec), "pct": len(rec) / len(cl),
+             "mediana": statistics.median((x[1] - x[0]).days for x in rec)}
+        for k, w in (("r3", 91), ("r12", 365)):
+            el = [x for x in cl.values() if (HOJE - x[0]).days >= w]
+            r[k] = sum(1 for x in el if len(x) > 1 and (x[1] - x[0]).days <= w) / len(el)
+        return r
+
+    so_planos, com_avulsos = dias(planos), dias(planos, av)
+    visoes = [("Só planos (análise das outras abas)", taxas(so_planos)), ("Planos + serviços avulsos", taxas(com_avulsos)),
+              ("Planos + avulsos + produtos", taxas(dias(planos, av, pr)))]
+    ini_av = [c for c, x in com_avulsos.items() if (c, x[0]) not in planos]
+    ate_plano = [(so_planos[c][0] - com_avulsos[c][0]).days for c in ini_av if c in so_planos]
+    el = [c for c in ini_av if (HOJE - com_avulsos[c][0]).days >= 365]
+    inicio = {"clientes": len(ini_av), "ticket": statistics.median(av[(c, com_avulsos[c][0])] for c in ini_av),
+              "voltaram": sum(1 for c in ini_av if len(com_avulsos[c]) > 1) / len(ini_av),
+              "plano": len(ate_plano), "so_avulso": len(ini_av) - len(ate_plano), "dias_plano": statistics.median(ate_plano),
+              "plano12": sum(1 for c in el if c in so_planos and (so_planos[c][0] - com_avulsos[c][0]).days <= 365) / len(el)}
+    return visoes, inicio
+
+
 def escolher_exemplos(clientes):
     """Um cliente real para cada padrão de comportamento (o de maior gasto entre os que se encaixam)."""
     def melhor(cond, chave=lambda c: c["total"]):
@@ -413,7 +466,7 @@ COMPRAS = [
 CL, CP = colunas(CLIENTES), colunas(COMPRAS)
 
 
-def montar(compras, clientes, cadastro, trocas, exemplos, destino, compactar=True):
+def montar(compras, clientes, cadastro, trocas, exemplos, destino, compactar=True, avulsos=None):
     wb = Workbook()
     nC, nP = len(clientes) + 1, len(compras) + 1
     inicio = min(x["data"] for x in compras)
@@ -487,6 +540,7 @@ def montar(compras, clientes, cadastro, trocas, exemplos, destino, compactar=Tru
         "• O histórico da API começa em janeiro de 2021: quem já era cliente antes aparece com a 1ª compra em 2021.",
         "• Abas: 'Tempo entre compras', 'Momento da recompra', 'Perfis', 'Complementos', 'Faturamento' e 'Campanhas' são calculadas a partir das bases 'Clientes' e 'Compras'.",
         "• 'Campanhas' traz a situação atual de cada cliente e a lista de quem abordar agora; 'Exemplos' mostra jornadas reais.",
+        "• 'Com avulsos' compara os números de recompra contando também serviços avulsos e produtos.",
     ]
     r += 2
     for i, n_ in enumerate(notas):
@@ -675,6 +729,36 @@ def montar(compras, clientes, cadastro, trocas, exemplos, destino, compactar=Tru
     wf.cell(row=r + 1, column=1, value=f"{HOJE.year} vai até {HOJE:%d/%m}. Em 2021 quase todo cliente aparece como 1ª compra porque o histórico começa nesse ano.").font = FI
     larguras(wf, [10, 12, 18, 12, 18, 18, 14, 16, 16])
 
+    # ---------------- Com avulsos (valores calculados pelo script, a partir das vendas)
+    if avulsos:
+        visoes, inicio = avulsos
+        wa = wb.create_sheet("Com avulsos", 1)
+        titulo(wa, "Recompra contando também serviços avulsos e produtos", fonte + " • Calculado pelo script")
+        secao(wa, 4, "A. Quantos clientes voltam a comprar, conforme o que se conta como compra")
+        cabecalho(wa, 5, ["O que conta como compra", "Clientes", "Voltaram a comprar", "% que voltou (até hoje)",
+                          "% de recompra em até 3 meses", "% de recompra em até 12 meses", "Mediana de dias até a 2ª compra"])
+        wa.row_dimensions[5].height = 45
+        for i, (t, v) in enumerate(visoes, 6):
+            linha(wa, i, [t, v["clientes"], v["voltaram"], v["pct"], v["r3"], v["r12"], v["mediana"]], [None, NUM, NUM, PCT, PCT, PCT, NUM])
+        r = 6 + len(visoes) + 1
+        secao(wa, r, "B. Clientes que começaram por um serviço avulso (sem plano no mesmo dia)")
+        cabecalho(wa, r + 1, ["Indicador", "Valor", "Como ler"])
+        inds = [("Clientes que começaram por um avulso", inicio["clientes"], NUM, ""),
+                ("Ticket mediano do 1º avulso (R$)", inicio["ticket"], BRL0, ""),
+                ("Voltaram para qualquer compra (avulso ou plano)", inicio["voltaram"], PCT, ""),
+                ("Compraram um plano depois", inicio["plano"], NUM, ""),
+                ("Ficaram só no avulso", inicio["so_avulso"], NUM, ""),
+                ("Mediana de dias do 1º avulso até o 1º plano", inicio["dias_plano"], NUM, "Entre os que compraram plano."),
+                ("% que comprou plano em até 12 meses", inicio["plano12"], PCT, "Só clientes com o 1º avulso há 1 ano ou mais.")]
+        for i, (t, v, fmt, como) in enumerate(inds, r + 2):
+            linha(wa, i, [t, v, como], [None, fmt, None])
+        notas = ["• Compra = dia com pelo menos uma venda paga do tipo contado (plano, serviço avulso ou produto). Várias no mesmo dia contam como uma.",
+                 "• Serviço avulso = item 'Serviço' com valor pago nas vendas do Belle (sessão comprada fora de plano). Avaliações não entram.",
+                 "• Com avulsos a taxa cai porque entram clientes que só experimentam uma sessão e não voltam; as outras abas continuam só com planos."]
+        for i, t in enumerate(notas, r + 3 + len(inds)):
+            wa.cell(row=i, column=1, value=t).font = FI
+        larguras(wa, [48, 14, 14, 14, 14, 14, 16])
+
     # ---------------- Campanhas
     wk = wb.create_sheet("Campanhas")
     titulo(wk, "Situação atual de cada cliente e quem abordar agora", fonte + " • Situação pela última compra de cada cliente")
@@ -799,6 +883,7 @@ if __name__ == "__main__":
     planos, validade, sessoes, futuros, visitas, agendado, cadastro = carregar()
     compras, trocas = montar_compras(planos, sessoes, futuros)
     clientes = analisar(compras, visitas, agendado, validade)
+    avulsos = comparar_avulsos(compras, extras())
     por_cliente = collections.defaultdict(list)
     for x in compras:
         por_cliente[x["cliente"]].append(x)
@@ -806,6 +891,8 @@ if __name__ == "__main__":
         c["_todas"] = por_cliente[c["cliente"]]
     exemplos = escolher_exemplos(clientes)
     out = os.environ.get("BELLE_OUT", "Recompra_Clientes_Drenesse.xlsx")
-    montar(compras, clientes, cadastro, trocas, exemplos, out)
+    montar(compras, clientes, cadastro, trocas, exemplos, out, avulsos=avulsos)
     k = numeros(compras, clientes, trocas)
     print(f"{k['clientes']} clientes, {k['compras']} compras, {k['recompraram']} voltaram a comprar ({k['pct']:.1%}) -> {out}")
+    for t, v in avulsos[0]:
+        print(f"  {t}: {v['clientes']} clientes, {v['pct']:.1%} voltaram, {v['r12']:.1%} em 12 meses, mediana {v['mediana']} dias")
