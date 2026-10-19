@@ -72,6 +72,7 @@ section { display: grid; gap: 20px; }
   content: ""; position: absolute; left: -7px; top: 36px; bottom: -30px; width: 2px; background: var(--line);
 }
 .card.key { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand) inset; }
+.card .who { font-size: 12.5px; color: var(--muted); }
 .card .tag { justify-self: start; font: 600 11px/1 var(--font-body); letter-spacing: .06em; text-transform: uppercase; padding: 5px 8px; border-radius: 6px; background: var(--brand-soft); color: var(--brand); }
 .card ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 .data { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; }
@@ -129,7 +130,7 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
   <header>
     <span class="eyebrow">Guia do time SDR · Método Drenesse</span>
     <h1>Jornada ideal de compra da cliente</h1>
-    <p class="lede">Do primeiro contato à segunda compra e à reativação. Cada prazo e cada recomendação abaixo vem do histórico real da Drenesse no Belle, cruzado com a estratégia do Método Drenesse Anual 2026-2027.</p>
+    <p class="lede">Do primeiro contato à segunda compra e à reativação. Cada prazo e cada recomendação abaixo vem do histórico real da Drenesse no Belle, cruzado com a estratégia do Método Drenesse Anual 2026-2027 e com os POPs comerciais e da recepção.</p>
     <div class="facts">
       <span><b class="num">25.745</b> planos aprovados (2021–2026)</span>
       <span><b class="num">327 mil</b> agendamentos (2023–2026)</span>
@@ -143,7 +144,7 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
     <div class="sec-head">
       <span class="eyebrow">1 · Fluxograma</span>
       <h2 id="t-fluxo">O caminho da cliente, etapa por etapa</h2>
-      <p class="note">À esquerda, o prazo. No centro, o que fazer e as respostas rápidas do Lever para a etapa. À direita, o que fazer quando a cliente sai do caminho.</p>
+      <p class="note">À esquerda, o prazo. No centro, o que fazer e as respostas rápidas do Lever para a etapa. À direita, o que fazer quando a cliente sai do caminho. Os nomes de funções, blocos e regras seguem os POPs da Drenesse.</p>
     </div>
 
     <div class="flow">
@@ -151,15 +152,16 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
         <div class="when">D0<small>lead chega</small></div>
         <div class="card">
           <span class="tag">Primeiro contato</span>
-          <h3>Responder rápido e abrir a conversa pela queixa</h3>
+          <span class="who">Responsável: SDR da carteira · no Instagram, a IA e depois a Social Seller</span>
+          <h3>Iniciar o atendimento em até 6 minutos e abrir pela queixa</h3>
           <ul>
-            <li>Responder em minutos, ainda com o anúncio fresco na cabeça da cliente.</li>
-            <li>Apresentar-se e perguntar o que ela busca (menu de protocolos ou pergunta aberta).</li>
+            <li>Regra da carteirização (POP 02): sem início em 6 minutos, o lead passa para a próxima SDR da fila.</li>
+            <li>Perguntar o que mais incomoda a cliente hoje (Etapa 1 do POP).</li>
           </ul>
-          <div class="scripts"><span class="chip">AMarina</span><span class="chip">Triagem 1 SDR</span><span class="chip">Instagram</span><span class="chip">Mvote</span></div>
+          <div class="scripts"><span class="chip">Triagem 1 SDR</span><span class="chip">AMarina</span><span class="chip">Instagram</span></div>
         </div>
         <div class="side">
-          <div class="branch warn"><strong>Sem resposta</strong><span>Cadência de sem resposta (D+1, D+2, D+3). Depois passa para leads frios.</span><div class="scripts"><span class="chip">Sem Resposta cadência 1</span><span class="chip">TESTE VACUO</span></div></div>
+          <div class="branch warn"><strong>Sem resposta</strong><span>Cadência automática de sem resposta; ao terminar, vai para Leads Frios e depois recebe a etiqueta "Leads Alasca" (disparo mensal).</span><div class="scripts"><span class="chip">Sem Resposta cadência 1</span></div></div>
         </div>
       </div>
 
@@ -167,17 +169,19 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
         <div class="when">D0</div>
         <div class="card">
           <span class="tag">Qualificação</span>
-          <h3>Entender a dor e o potencial de compra</h3>
+          <span class="who">Responsável: SDR</span>
+          <h3>Entender a dor e marcar o potencial de venda no Lever</h3>
           <ul>
-            <li>Queixa principal: gordura localizada, flacidez, glúteo, diástase, inchaço ou pele.</li>
-            <li>Primeira vez na Drenesse? Já fez outro tratamento antes? Rotina, trabalho e quem decide.</li>
-            <li>Marcar o potencial no CRM: <b>alto</b> para gordura localizada, flacidez, glúteo ou diástase em cliente de 35 anos ou mais; <b>médio</b> para inchaço/drenagem; <b>baixo</b> para só limpeza de pele ou cliente de até 24 anos.</li>
+            <li>Queixa principal, se é a primeira vez na Drenesse, se já fez outro tratamento, rotina e quem decide.</li>
+            <li>Mostrar uma foto de resultado compatível com a queixa (Etapa 2 do POP).</li>
+            <li>Preencher o campo <b>Potencial de venda</b>: <b>alto</b> para gordura localizada, flacidez, glúteo ou diástase em cliente de 35 anos ou mais; <b>médio</b> para inchaço/drenagem; <b>baixo</b> para só limpeza de pele ou cliente de até 24 anos.</li>
           </ul>
-          <div class="scripts"><span class="chip">Investigação 1</span><span class="chip">Investigação 2</span><span class="chip">Investigação 3</span><span class="chip">Investigação 4</span><span class="chip">cliente</span><span class="chip">TRABALHO ROTINA</span><span class="chip">NÃO TRABALHA</span></div>
+          <div class="scripts"><span class="chip">Triagem 2 SDR</span><span class="chip">Investigação 2</span><span class="chip">Investigação 3</span><span class="chip">cliente</span><span class="chip">NÃO TRABALHA</span></div>
           <div class="data"><span>Valor em 12 meses de quem começa por Crioturbo <b>R$ 3.655</b></span><span>por Stimulus <b>R$ 3.564</b></span><span>por plano de drenagem <b>R$ 1.169</b></span><span>por facial <b>R$ 307</b> (medianas)</span></div>
         </div>
         <div class="side">
-          <div class="branch warn"><strong>Já tem plano</strong><span>Não é lead de aquisição. Direcionar para a recepção ou para o fluxo de inativos (seção 3).</span><div class="scripts"><span class="chip">Direcionamento CS</span></div></div>
+          <div class="branch warn"><strong>Já é cliente</strong><span>Não é lead de aquisição: segue o fluxo de inativos (seção 3), com reavaliação sem custo.</span></div>
+          <div class="branch warn"><strong>Sem interesse</strong><span>Mover para Não Leads, marcar o objetivo perdido e adicionar a etiqueta "Sem interesse".</span></div>
         </div>
       </div>
 
@@ -185,18 +189,19 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
         <div class="when">D0<small>agendar</small></div>
         <div class="card key">
           <span class="tag">Agendamento</span>
-          <h3>Agendar a avaliação estética com a experiência no mesmo dia</h3>
+          <span class="who">Responsável: SDR</span>
+          <h3>Agendar a avaliação com a experiência na mesma visita</h3>
           <ul>
-            <li>A avaliação vem primeiro e a experiência (isca) logo depois, na mesma visita.</li>
-            <li>Isca conforme a queixa: drenagem Método Drenesse para inchaço ou geral; sessão de Diástase para diástase; Stimulus para definição.</li>
-            <li>Oferecer primeiro os horários de menor ocupação da unidade.</li>
-            <li>Fazer o cadastro completo, com data de nascimento, profissão e bairro, porque são os dados que mostram o poder de compra.</li>
+            <li>A avaliação vem primeiro e a experiência (isca) logo depois. Isca conforme a queixa: drenagem Método Drenesse para inchaço ou geral; sessão de Diástase para diástase; Stimulus para definição.</li>
+            <li>Nunca perguntar "quer agendar?": oferecer manhã, tarde ou noite, de preferência nos horários de menor ocupação.</li>
+            <li>No Belle, cadastrar como <b>AV</b> e também o serviço da isca; o Spa Face vai só como AV, com o procedimento na observação.</li>
+            <li>Cadastro (Etapa 5): telefone, endereço e profissão.</li>
           </ul>
-          <div class="scripts"><span class="chip">Agendamento avaliação</span><span class="chip">aprimeiropasso</span><span class="chip">Triagem 3 SDR</span><span class="chip">Triagem 4 SDR</span><span class="chip">CADASTRO</span><span class="chip">FINALIZAÇÃO</span></div>
+          <div class="scripts"><span class="chip">Triagem 3 SDR</span><span class="chip">Triagem 4 SDR</span><span class="chip">Triagem 5 SDR</span><span class="chip">Triagem 6 SDR</span></div>
           <div class="data"><span>Primeira visita com avaliação + drenagem: <b>38,9%</b> fecham plano no dia</span><span>só a drenagem, sem avaliação: <b>25,9%</b></span></div>
         </div>
         <div class="side">
-          <div class="branch warn"><strong>Pergunta preço</strong><span>Não passar valor de plano no WhatsApp. Explicar que a avaliação monta o protocolo e usar o preço de entrada da campanha.</span><div class="scripts"><span class="chip">Valores opção 2</span><span class="chip">Objeções Valor SDR</span><span class="chip">Objeções Sem Tempo SDR</span></div></div>
+          <div class="branch warn"><strong>Objeções</strong><span>Responder com acolhimento, explicação e uma pergunta de direcionamento. Valor: protocolos a partir de R$ 300, em até 12x; a avaliação define o melhor protocolo.</span><div class="scripts"><span class="chip">Objeções Valor SDR</span><span class="chip">Objeções Ta Caro SDR</span><span class="chip">Objeções Vou Pensar SDR</span><span class="chip">Objeções Sem Tempo SDR</span></div></div>
         </div>
       </div>
 
@@ -204,16 +209,17 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
         <div class="when">D-1 e D0<small>da visita</small></div>
         <div class="card">
           <span class="tag">Confirmação</span>
+          <span class="who">Responsável: SDR (bloco das 17h30 para o dia seguinte e das 8h para o dia)</span>
           <h3>Confirmar na véspera, acolher no dia</h3>
           <ul>
             <li>Véspera: confirmar data, horário e endereço da unidade.</li>
             <li>No dia, se ela já confirmou, não pedir "SIM" de novo: mandar uma mensagem de acolhimento oferecendo ajuda com a localização.</li>
           </ul>
           <div class="scripts"><span class="chip">Confirmação Avaliação 1 Dia Antes</span><span class="chip">Confirmação novo</span><span class="chip">Endereço (da unidade)</span></div>
-          <div class="data"><span>Comparecimento à avaliação em 2026: <b>55,5%</b>. Quase metade das avaliações não acontece.</span></div>
+          <div class="data"><span>Comparecimento à avaliação em 2026: <b>55,5%</b>, perto da meta do POP (50%). Quase metade das avaliações não acontece.</span></div>
         </div>
         <div class="side">
-          <div class="branch warn"><strong>Faltou ou desmarcou</strong><span>Reagendar no mesmo dia ou no seguinte. A cadência de falta continua por até 7 dias.</span><div class="scripts"><span class="chip">Faltou 1 SDR</span><span class="chip">Faltou AV cadência 1</span><span class="chip">mremarcar</span></div></div>
+          <div class="branch warn"><strong>Faltou ou desmarcou</strong><span>Primeiro contato no mesmo dia, para reagendar enquanto o interesse está quente. O que não reagendar segue no bloco de Faltou AV de sexta-feira.</span><div class="scripts"><span class="chip">Faltou 1 SDR</span><span class="chip">Faltou AV cadência 1</span></div></div>
         </div>
       </div>
 
@@ -221,28 +227,31 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
         <div class="when">Dia da visita</div>
         <div class="card key">
           <span class="tag">Avaliação + experiência</span>
+          <span class="who">Responsáveis: recepção (acolhimento e Nutrium) · Supervisora Sênior (avaliação e proposta) · Supervisora Comercial (apoio no fechamento)</span>
           <h3>Fechar no dia</h3>
           <ul>
-            <li>Avaliação: fotos, objetivo e dores. Na experiência, a cliente sente o resultado.</li>
-            <li>Proposta pela dor. Anual Método Drenesse: <b>R$ 3.590 no PIX / R$ 4.290 no cartão</b>. Condição de aquisição (<b>R$ 3.290 PIX / R$ 3.990 cartão</b>) só para cliente nova ou inativa há 6 meses ou mais, em campanha autorizada.</li>
-            <li>Quem fecha: avaliadora, comercial da unidade ou SDR. O importante é não deixar a cliente sair sem proposta.</li>
+            <li>Avaliação: fotos com termo, objetivo e dores. Na experiência, a cliente sente o resultado.</li>
+            <li>Proposta pela dor, registrada no Belle. Anual Método Drenesse: <b>R$ 3.590 no PIX / R$ 4.290 no cartão</b>. Condição de aquisição (<b>R$ 3.290 PIX / R$ 3.990 cartão</b>) só para cliente nova ou inativa há 6 meses ou mais, em campanha autorizada.</li>
+            <li>Entrada mínima (POP 06): cliente de primeira viagem, R$ 1.000 ou 50%; boleto com vencimento até o dia 09 do mês seguinte, checklist, declaração, áudio e grupo de WhatsApp.</li>
           </ul>
           <div class="data"><span>Das clientes novas cuja primeira visita foi uma avaliação e que compram plano em até 12 meses, <b>71%</b> compram no próprio dia e <b>93%</b> até o 60º dia.</span></div>
         </div>
         <div class="side">
-          <div class="branch warn"><strong>Não fechou</strong><span>Negociação em D+1, D+3 e D+7, investigando a objeção. Depois de 60 dias a chance de compra fica muito baixa.</span><div class="scripts"><span class="chip">Negociação 1 SDR</span><span class="chip">Objeções Vou Pensar SDR</span><span class="chip">Objeções Ta Caro SDR</span><span class="chip">Mensagem 4 vai pensar</span></div></div>
-          <div class="branch ok"><strong>Comprou</strong><span>Mover o card para Convertidos no mesmo dia. É ele que alimenta o painel.</span></div>
+          <div class="branch warn"><strong>Veio e não fechou</strong><span>Sênior registra o motivo no Belle. A SDR faz o primeiro contato em até 24h e segue no bloco de Negociação de segunda-feira. Depois de 60 dias a chance de compra fica muito baixa.</span><div class="scripts"><span class="chip">Negociação 1 SDR</span><span class="chip">Objeções Vou Pensar SDR</span><span class="chip">Mensagem 4 vai pensar</span></div></div>
+          <div class="branch ok"><strong>Comprou</strong><span>Mover o card para Convertidos no mesmo dia. É ele que alimenta o painel e a bonificação.</span></div>
         </div>
       </div>
 
       <div class="step">
-        <div class="when">D0 a D+3<small>pós-compra</small></div>
+        <div class="when">D0 a D+1<small>pós-compra</small></div>
         <div class="card">
           <span class="tag">Boas-vindas</span>
-          <h3>Passar para a recepção com a agenda montada</h3>
+          <span class="who">Responsáveis: recepção (na unidade) · setor de Relacionamento (onboarding)</span>
+          <h3>Sair da unidade com a agenda montada</h3>
           <ul>
-            <li>Parabenizar e apresentar a recepção, que cuida dos agendamentos.</li>
-            <li>Deixar marcadas as primeiras sessões e a <b>reavaliação de 30 dias</b>.</li>
+            <li>Termo de compromisso, Folder dos Próximos Passos e pagamento.</li>
+            <li>Agendar na hora: nutricionista, bioimpedância, primeiras sessões e a <b>reavaliação de 30 dias</b>.</li>
+            <li>Relacionamento envia o onboarding do protocolo; o card do SDR recebe a mensagem de passagem.</li>
           </ul>
           <div class="scripts"><span class="chip">PARABÉNS</span><span class="chip">Cadência Convertidos</span><span class="chip">Onboarding (do protocolo)</span></div>
         </div>
@@ -253,17 +262,18 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
         <div class="when">D+30<small>reavaliação 1</small></div>
         <div class="card key">
           <span class="tag">Reavaliação + cashback</span>
+          <span class="who">Responsáveis: Relacionamento confirma · Supervisora Sênior reavalia · Supervisora Comercial entrega o cashback</span>
           <h3>Mostrar a evolução e entregar o cashback</h3>
           <ul>
             <li>Fotos de antes e agora, medidas e aderência às sessões.</li>
+            <li>A Sênior registra a próxima dor ou o próximo objetivo (o "procedimento complementar" do POP 06).</li>
             <li>Entregar o cashback, válido até D+60 e só para um novo protocolo (regras na seção 4).</li>
-            <li>A esteticista registra a próxima dor ou o próximo objetivo.</li>
           </ul>
           <div class="scripts"><span class="chip">Reavaliação</span><span class="chip">nova: Reavaliação 30 dias + cashback</span></div>
           <div class="data"><span>Quem faz o acompanhamento entre 14 e 60 dias depois da compra: <b>68%</b> compram de novo em até 90 dias. Quem não faz: <b>32%</b>.</span></div>
         </div>
         <div class="side">
-          <div class="branch warn"><strong>Não veio à reavaliação</strong><span>Remarcar em até 7 dias e lembrar que o cashback tem prazo.</span></div>
+          <div class="branch warn"><strong>Não veio à reavaliação</strong><span>Relacionamento remarca em até 7 dias e lembra que o cashback tem prazo.</span></div>
         </div>
       </div>
 
@@ -271,15 +281,16 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
         <div class="when">D+45 a D+60<small>janela crítica</small></div>
         <div class="card key">
           <span class="tag">2ª compra</span>
+          <span class="who">Responsáveis: Supervisora Comercial identifica · Supervisora Sênior oferta · esteticista conduz na cabine</span>
           <h3>Fechar o segundo protocolo antes do D+60</h3>
           <ul>
-            <li>Oferecer o protocolo ligado à dor registrada na reavaliação, usando o cashback.</li>
-            <li>Cross-sell mais comum por primeira compra: Crioturbo → drenagem, Pós-Crioturbo, Stimulus. Drenagem → Lipo Gessada, facial, Crioturbo. Stimulus → drenagem, Crioturbo, Lipo Gessada.</li>
+            <li>Na organização diária da base (POP 06), separar as clientes entre D+30 e D+60 e montar o plano de ação de cada uma.</li>
+            <li>Oferecer o protocolo ligado à dor registrada na reavaliação, usando o cashback. Cross-sell mais comum: Crioturbo → drenagem, Pós-Crioturbo, Stimulus. Drenagem → Lipo Gessada, facial, Crioturbo. Stimulus → drenagem, Crioturbo, Lipo Gessada.</li>
           </ul>
           <div class="data"><span>A 2ª compra sai em <b>33 dias</b> (mediana)</span><span><b>39%</b> das clientes compram de novo até o 60º dia, contra <b>54%</b> até 12 meses</span></div>
         </div>
         <div class="side">
-          <div class="branch warn"><strong>Não comprou</strong><span>Seguir a jornada do anual (D+90 segundo objetivo, D+180 revisão) e, se parar de vir, entra em inativos.</span></div>
+          <div class="branch warn"><strong>Não comprou</strong><span>Segue a jornada do anual (D+90 segundo objetivo, D+180 revisão). Se ficar 30 dias sem vir, entra no funil de inativos do SDR.</span></div>
         </div>
       </div>
 
@@ -287,10 +298,11 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
         <div class="when">D+90 a D+345</div>
         <div class="card">
           <span class="tag">Recorrência</span>
+          <span class="who">Responsáveis: Supervisora Sênior e Supervisora Comercial</span>
           <h3>Manter a cliente evoluindo até a renovação</h3>
           <ul>
             <li>D+90: novo diagnóstico corporal (2º objetivo). D+180: revisão e próximo ciclo. D+270: planejar o último trimestre.</li>
-            <li>D+330 a D+345: renovar com base no uso e no histórico de compras.</li>
+            <li>D+330 a D+345: renovar com base no uso e no histórico de compras. Entrada mínima de cliente recorrente: 30%.</li>
           </ul>
         </div>
         <div class="side"></div>
@@ -333,7 +345,7 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
     <div class="sec-head">
       <span class="eyebrow">3 · Inativos</span>
       <h2 id="t-inativos">Como trabalhar cada faixa de inatividade</h2>
-      <p class="note">Inativa = cliente de plano que não tem sessão atendida há 30 dias ou mais. Os percentuais mostram o que aconteceu nos 60 dias seguintes, em fotos mensais de 2023 a 2026, sem nenhuma ação especial.</p>
+      <p class="note">Inativa = cliente de plano que não tem sessão atendida há 30 dias ou mais (a mesma régua de 1 mês do POP 02). Trabalhadas pela SDR no bloco das 14h às 17h30 e no disparo de quinta-feira, que deve ser separado por faixa. Os percentuais mostram o que aconteceu nos 60 dias seguintes, em fotos mensais de 2023 a 2026, sem nenhuma ação especial.</p>
     </div>
     <div class="grid3">
       <div class="panel">
@@ -389,6 +401,7 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
           <li><b>Uso:</b> só em um novo protocolo (cross-sell), não na renovação do mesmo plano e não somado à condição de aquisição.</li>
           <li><b>Valor sugerido:</b> 10% do primeiro plano, com teto de R$ 300. Assim o desconto é pago pela margem da 2ª compra, como pede a estratégia do anual.</li>
           <li><b>Registro:</b> anotar no CRM a data da entrega e o valor, para medir quantos cashbacks viram 2ª compra.</li>
+          <li><b>Exceções:</b> valor acima da regra só com autorização da Head de Vendas, como nos acordos fora do padrão (POP 06).</li>
         </ul>
       </div>
       <div class="panel">
@@ -470,7 +483,7 @@ Posso deixar reservado o seu horário para começarmos o [protocolo]?</div>
   </section>
 
   <footer>
-    <span>Fontes: Belle Software (Venda de Planos desde jan/2021, Vendas Detalhado desde mai/2021, Relatório de Atendimentos desde jan/2023), respostas rápidas do Lever e o material "Estratégia Método Drenesse Anual 2026-2027". Unidades Petrópolis, Lagoa Nova, Capim Macio e Norte Shopping.</span>
+    <span>Fontes: Belle Software (Venda de Planos desde jan/2021, Vendas Detalhado desde mai/2021, Relatório de Atendimentos desde jan/2023), respostas rápidas do Lever, o material "Estratégia Método Drenesse Anual 2026-2027" e os POPs 01, 02, 03, 05 e 06. Unidades Petrópolis, Lagoa Nova, Capim Macio e Norte Shopping.</span>
     <span>Leitura dos números: as comparações mostram associação, não causa. Por exemplo, quem volta para a reavaliação já tende a ser uma cliente mais engajada. Ainda assim, todas apontam na mesma direção.</span>
   </footer>
 </div>
