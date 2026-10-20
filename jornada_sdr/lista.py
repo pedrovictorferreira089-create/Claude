@@ -17,10 +17,10 @@ C = compras_por_cliente(ps)
 INI24 = HOJE - dt.timedelta(days=730)
 
 # cross-sell mais frequente depois de cada categoria (matriz calculada na análise de 12 meses)
-CROSS = {"Crioturbo": "Drenagem anual / Pós-Crioturbo / Stimulus", "Drenagem": "Lipo Gessada / Facial / Crioturbo",
-         "Stimulus/Glúteo": "Drenagem / Crioturbo / Lipo Gessada", "Lipo Gessada/Modelagem": "Drenagem / Crioturbo / Facial",
-         "Diástase": "Drenagem / Crioturbo", "Facial": "Facial (novo protocolo) / Drenagem", "Laser": "Facial / Drenagem",
-         "Enzimas/Injetáveis": "Crioturbo / Drenagem", "Pós-Crioturbo": "Crioturbo (nova área) / Drenagem"}
+CROSS = {"Crioturbo": "Stimulus / Lipo Gessada / Crioturbo (nova área)", "Drenagem": "Lipo Gessada / Crioturbo / Stimulus",
+         "Stimulus/Glúteo": "Crioturbo / Lipo Gessada", "Lipo Gessada/Modelagem": "Crioturbo / Stimulus",
+         "Diástase": "Stimulus / Crioturbo", "Facial": "Crioturbo / Lipo Gessada / Stimulus", "Laser": "Crioturbo / Lipo Gessada / Stimulus",
+         "Enzimas/Injetáveis": "Crioturbo / Lipo Gessada", "Pós-Crioturbo": "Crioturbo (nova área) / Stimulus"}
 
 cad, nomes = {}, {}
 for f in glob.glob(D + "vendas_detalhado__*"):
@@ -71,13 +71,13 @@ for c, l in C.items():
     if saldo > 0:
         passo = "Retomar sessões do plano (saldo) + acompanhamento estético"
     elif dias < 60:
-        passo = "Reavaliação com proposta de 2º protocolo (cross-sell)"
+        passo = "Reavaliação com proposta de upgrade (Crioturbo, Stimulus ou Lipo Gessada)"
     elif dias < 90:
-        passo = "Presente (Spa Face) + reavaliação; oferta de novo protocolo"
+        passo = "Presente (Spa Face) + reavaliação; oferta de upgrade"
     else:
         passo = "Reativação: vídeo/convite + reavaliação; condição de aquisição só se ≥ 6 meses"
     linhas.append([nivel, faixa, dias, nomes.get(c, ""), tel, unid.get(c, ""), u, l[-1]["d"], cat, round(g24, 2),
-                   round(sum(x["v"] for x in l), 2), len(l), saldo, CROSS.get(cat, "Drenagem / Crioturbo"), passo, c])
+                   round(sum(x["v"] for x in l), 2), len(l), saldo, CROSS.get(cat, "Crioturbo / Lipo Gessada / Stimulus"), passo, c])
 
 ordem_f = {"30-59 dias": 0, "60-89 dias": 1, "90-179 dias": 2, "180-365 dias": 3}
 linhas.sort(key=lambda r: (r[0][0], ordem_f[r[1]], -r[9]))
@@ -108,7 +108,7 @@ ws.column_dimensions["A"].width = 22
 wl = wb.create_sheet("Clientes")
 cols = ["Nível (gasto 24m)", "Faixa sem vir", "Dias sem vir", "Cliente", "Celular", "Unidade (última sessão)", "Última sessão",
         "Última compra de plano", "Categoria da última compra", "Gasto 24m (R$)", "Gasto total (R$)", "Nº de compras",
-        "Saldo de sessões", "Cross-sell sugerido", "Próximo passo", "Cód. Belle"]
+        "Saldo de sessões", "Upgrade sugerido", "Próximo passo", "Cód. Belle"]
 wl.append(cols)
 for r in linhas:
     wl.append(r)
