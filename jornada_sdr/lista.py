@@ -17,9 +17,9 @@ C = compras_por_cliente(ps)
 INI24 = HOJE - dt.timedelta(days=730)
 
 # cross-sell mais frequente depois de cada categoria (matriz calculada na análise de 12 meses)
-CROSS = {"Crioturbo": "Stimulus / Lipo Gessada / Crioturbo (nova área)", "Drenagem": "Lipo Gessada / Crioturbo / Stimulus",
+CROSS = {"Crioturbo": "Stimulus / Lipo Gessada / Crioturbo (nova área)", "Drenagem": "Crioturbo / Lipo Gessada / Stimulus / Enzimas / facial de tratamento",
          "Stimulus/Glúteo": "Crioturbo / Lipo Gessada", "Lipo Gessada/Modelagem": "Crioturbo / Stimulus",
-         "Diástase": "Stimulus / Crioturbo", "Facial": "Crioturbo / Lipo Gessada / Stimulus", "Laser": "Crioturbo / Lipo Gessada / Stimulus",
+         "Diástase": "Stimulus / Crioturbo / Enzimas", "Facial": "Facial de tratamento (Mellan, microagulhamento) / Crioturbo / Lipo Gessada", "Laser": "Facial de tratamento / Crioturbo / Lipo Gessada",
          "Enzimas/Injetáveis": "Crioturbo / Lipo Gessada", "Pós-Crioturbo": "Crioturbo (nova área) / Stimulus"}
 
 cad, nomes = {}, {}
@@ -71,13 +71,13 @@ for c, l in C.items():
     if saldo > 0:
         passo = "Retomar sessões do plano (saldo) + acompanhamento estético"
     elif dias < 60:
-        passo = "Reavaliação com proposta de upgrade (Crioturbo, Stimulus ou Lipo Gessada)"
+        passo = "Reavaliação com proposta de upgrade (procedimento de maior valor)"
     elif dias < 90:
         passo = "Presente (Spa Face) + reavaliação; oferta de upgrade"
     else:
         passo = "Reativação: vídeo/convite + reavaliação; condição de aquisição só se ≥ 6 meses"
     linhas.append([nivel, faixa, dias, nomes.get(c, ""), tel, unid.get(c, ""), u, l[-1]["d"], cat, round(g24, 2),
-                   round(sum(x["v"] for x in l), 2), len(l), saldo, CROSS.get(cat, "Crioturbo / Lipo Gessada / Stimulus"), passo, c])
+                   round(sum(x["v"] for x in l), 2), len(l), saldo, CROSS.get(cat, "Crioturbo / Lipo Gessada / Stimulus / Enzimas"), passo, c])
 
 ordem_f = {"30-59 dias": 0, "60-89 dias": 1, "90-179 dias": 2, "180-365 dias": 3}
 linhas.sort(key=lambda r: (r[0][0], ordem_f[r[1]], -r[9]))
