@@ -1,0 +1,790 @@
+<title>Quintou Drenesse</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: faixa da marca no topo, abas fixas, placar em cartões por colaboradora; roleta e balões como telas de jogo. */
+:root {
+  --bg: #FDF7F5;
+  --surface: #FFFFFF;
+  --surface-2: #FBEDEA;
+  --line: #F1D3D6;
+  --ink: #3A1A2A;
+  --ink-soft: #8C5A72;
+  --salmon: #EF8A6F;
+  --rose: #D4537E;
+  --wine: #993556;
+  --wine-deep: #72243E;
+  --gold: #C99532;
+  --red: #D8364B;
+  --ok: #1E8A62;
+  --ok-bg: #E4F4EC;
+  --warn: #B4581C;
+  --warn-bg: #FDEEE2;
+  --on-accent: #FFFFFF;
+  --shadow: 0 1px 2px rgb(114 36 62 / .06), 0 6px 18px rgb(114 36 62 / .06);
+  --f-display: "Poppins", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1B1015; --surface: #26161D; --surface-2: #331E27; --line: #4A2C38;
+    --ink: #F7E8EC; --ink-soft: #C99AAE; --salmon: #F39C83; --rose: #E9719A; --wine: #E07FA0; --wine-deep: #F2A9C0;
+    --gold: #E2B354; --red: #F0566A; --ok: #5BC797; --ok-bg: #173126; --warn: #F0A061; --warn-bg: #3A2416;
+    --on-accent: #1B1015; --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1B1015; --surface: #26161D; --surface-2: #331E27; --line: #4A2C38;
+  --ink: #F7E8EC; --ink-soft: #C99AAE; --salmon: #F39C83; --rose: #E9719A; --wine: #E07FA0; --wine-deep: #F2A9C0;
+  --gold: #E2B354; --red: #F0566A; --ok: #5BC797; --ok-bg: #173126; --warn: #F0A061; --warn-bg: #3A2416;
+  --on-accent: #1B1015; --shadow: none; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); }
+button, input, select, textarea { font: inherit; color: inherit; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.num { font-variant-numeric: tabular-nums; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+.muted { color: var(--ink-soft); }
+:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
+
+/* topo */
+.top { background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.top .wrap { padding-block: 18px 14px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; }
+.brand { display: flex; flex-direction: column; gap: 2px; }
+.brand small { font: 600 11px/1 var(--f-body); letter-spacing: .18em; color: var(--salmon); text-transform: uppercase; }
+.brand h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; color: var(--wine-deep); letter-spacing: -.01em; line-height: 1.05; }
+.brand h1 span { color: var(--salmon); }
+.brand p { margin: 0; font-size: 13px; color: var(--ink-soft); }
+.daybox { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; min-width: 0; }
+.daybox label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+select, input[type=number], input[type=text], textarea {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; min-height: 40px; max-width: 100%;
+}
+.status { font-size: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 600; background: var(--surface); border: 1px solid var(--line); color: var(--ink-soft); white-space: nowrap; }
+.pill.ok { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+.pill.warn { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+.pill.sim { background: var(--wine); color: var(--on-accent); border-color: transparent; }
+
+/* abas */
+.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.tabs .wrap { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tab { border: 0; background: none; padding: 12px 14px 10px; font-weight: 600; font-size: 14px; color: var(--ink-soft); border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; display: inline-flex; gap: 6px; align-items: center; }
+.tab[aria-selected=true] { color: var(--wine-deep); border-bottom-color: var(--rose); }
+.tab .badge { background: var(--rose); color: var(--on-accent); border-radius: 999px; font-size: 11px; padding: 0 7px; line-height: 18px; }
+main .wrap { padding-block: 20px 48px; display: grid; gap: 20px; }
+.view[hidden] { display: none; }
+.view { display: grid; gap: 20px; }
+
+/* blocos */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow); min-width: 0; }
+.panel > h2 { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+.banner { border-radius: var(--r); padding: 12px 16px; font-size: 14px; }
+.banner.sim { background: var(--wine-deep); color: var(--on-accent); }
+.banner.warn { background: var(--warn-bg); color: var(--warn); }
+.banner b { font-weight: 700; }
+
+.team { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 6px; }
+.kpi .v { font: 700 26px/1.1 var(--f-display); color: var(--wine-deep); }
+.kpi .v small { font: 500 14px var(--f-body); color: var(--ink-soft); }
+.bar { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 99px; background: var(--rose); transition: width .5s ease; }
+.bar.gold i { background: var(--gold); }
+.bar.ok i { background: var(--ok); }
+
+.people { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.person { display: grid; gap: 14px; align-content: start; }
+.person header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.person h3 { font-size: 20px; font-weight: 600; color: var(--wine-deep); }
+.role { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+.big { display: flex; gap: 24px; flex-wrap: wrap; }
+.big div { display: grid; gap: 2px; }
+.big b { font: 700 44px/1 var(--f-display); color: var(--ink); }
+.big .same b { color: var(--salmon); }
+.big span { color: var(--ink-soft); font-size: 13px; }
+.dots { display: flex; gap: 5px; flex-wrap: wrap; }
+.dots i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--rose); }
+.dots i.on { background: var(--rose); }
+.dots i.same { background: var(--salmon); border-color: var(--salmon); }
+.line { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.rewards { display: flex; flex-wrap: wrap; gap: 6px; }
+.rw { display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; padding: 5px 9px; font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--ink-soft); }
+.rw.live { background: var(--rose); color: var(--on-accent); }
+.rw.done { text-decoration: line-through; opacity: .7; }
+.rw svg { width: 14px; height: 14px; flex: none; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { border: 0; border-radius: 10px; padding: 10px 14px; min-height: 40px; font-weight: 600; cursor: pointer; background: var(--wine); color: var(--on-accent); display: inline-flex; gap: 8px; align-items: center; justify-content: center; }
+.btn.ghost { background: var(--surface-2); color: var(--wine-deep); }
+.btn.small { padding: 6px 10px; min-height: 32px; font-size: 13px; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+details { border-top: 1px dashed var(--line); padding-top: 10px; }
+summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--wine); }
+.list { display: grid; gap: 4px; margin-top: 8px; font-size: 13px; }
+.list .it { display: grid; grid-template-columns: 52px 1fr auto; gap: 8px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--surface-2); }
+.list .it:last-child { border-bottom: 0; }
+.tag { font-size: 11px; font-weight: 600; border-radius: 6px; padding: 1px 6px; background: var(--surface-2); color: var(--ink-soft); white-space: nowrap; }
+.tag.same { background: var(--salmon); color: var(--on-accent); }
+.tag.ok { background: var(--ok-bg); color: var(--ok); }
+.tag.warn { background: var(--warn-bg); color: var(--warn); }
+
+.tablebox { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 8px; border-bottom: 1px solid var(--surface-2); vertical-align: middle; }
+.empty { padding: 18px; text-align: center; color: var(--ink-soft); font-size: 14px; }
+
+/* roleta */
+.game { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 20px; align-items: start; }
+@media (max-width: 760px) { .game { grid-template-columns: 1fr; } }
+.wheelbox { position: relative; width: min(100%, 440px); aspect-ratio: 1; margin: 0 auto; }
+.wheelbox svg { width: 100%; height: 100%; display: block; }
+#wheelRot { transform-origin: 160px 160px; transition: transform 5s cubic-bezier(.12, .7, .14, 1); }
+.who { display: flex; flex-wrap: wrap; gap: 8px; }
+.who button { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 12px; cursor: pointer; display: grid; text-align: left; gap: 2px; min-width: 120px; }
+.who button[aria-pressed=true] { border-color: var(--rose); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--rose); }
+.who b { font-family: var(--f-display); font-size: 15px; }
+.who small { font-size: 12px; color: var(--ink-soft); }
+.result { text-align: center; padding: 18px; border-radius: var(--r); background: var(--surface-2); display: grid; gap: 4px; }
+.result b { font: 700 24px/1.2 var(--f-display); color: var(--wine-deep); }
+
+/* balões */
+.balloons { display: flex; flex-wrap: wrap; gap: 14px; }
+.balloon { border: 0; background: none; padding: 0; cursor: pointer; display: grid; justify-items: center; gap: 4px; width: 104px; }
+.balloon svg { width: 72px; height: 104px; transition: transform .25s ease; }
+.balloon:not([disabled]):hover svg { transform: translateY(-4px) rotate(-3deg); }
+.balloon span { font-size: 12px; font-weight: 600; color: var(--ink-soft); text-align: center; }
+.balloon.popped svg { animation: pop .45s ease forwards; }
+.balloon .prize { font: 600 13px/1.3 var(--f-display); color: var(--wine-deep); text-align: center; }
+.balloon[disabled] { cursor: default; }
+@keyframes pop { 0% { transform: scale(1); opacity: 1; } 60% { transform: scale(1.35); opacity: .6; } 100% { transform: scale(.2); opacity: 0; } }
+.opened { display: grid; justify-items: center; align-content: center; gap: 6px; width: 104px; min-height: 140px; border-radius: 14px; border: 1px dashed var(--line); padding: 8px; text-align: center; }
+.opened b { font: 600 13px/1.3 var(--f-display); color: var(--wine-deep); }
+.opened small { font-size: 11px; color: var(--ink-soft); }
+
+/* formulários */
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label, .field .lbl { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+.field.full { grid-column: 1 / -1; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+textarea { min-height: 120px; resize: vertical; font-size: 13px; }
+.rules { display: grid; gap: 12px; max-width: 70ch; }
+.rules h3 { font-size: 15px; font-weight: 600; color: var(--wine-deep); margin-top: 4px; }
+.rules ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.rules p { margin: 0; }
+
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--wine-deep); color: var(--on-accent); padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 20; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  #wheelRot { transition-duration: .01s; }
+  .balloon.popped svg { animation: none; opacity: 0; }
+  .bar i, .balloon svg { transition: none; }
+}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <small>Drenesse · Comercial</small>
+      <h1>Quintou<span>!</span></h1>
+      <p>Toda quinta: mais agendamentos, encaixes no mesmo dia e vendas de ticket alto.</p>
+    </div>
+    <div class="daybox">
+      <label for="day">Quinta-feira</label>
+      <select id="day" aria-label="Escolher a quinta-feira"></select>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Seções">
+  <div class="wrap" role="tablist">
+    <button class="tab" role="tab" data-tab="placar" aria-selected="true">Placar</button>
+    <button class="tab" role="tab" data-tab="roleta" aria-selected="false">Roleta <span class="badge" id="bRoleta" hidden></span></button>
+    <button class="tab" role="tab" data-tab="baloes" aria-selected="false">Balões <span class="badge" id="bBaloes" hidden></span></button>
+    <button class="tab" role="tab" data-tab="lancar" aria-selected="false">Lançar</button>
+    <button class="tab" role="tab" data-tab="regras" aria-selected="false">Regras</button>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <div id="banners"></div>
+
+    <section class="view" id="v-placar">
+      <div class="team" id="team"></div>
+      <div class="people" id="people"></div>
+      <div class="panel">
+        <h2>Prêmios do dia <span class="muted" id="prizeCount"></span></h2>
+        <div class="tablebox" id="prizeLog"></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-roleta" hidden>
+      <div class="game">
+        <div class="panel">
+          <div class="wheelbox">
+            <svg viewBox="0 0 320 320" role="img" aria-label="Roleta de prêmios">
+              <g id="wheelRot"><g id="wheel"></g></g>
+              <circle cx="160" cy="160" r="22" fill="var(--surface)" stroke="var(--wine)" stroke-width="3"></circle>
+              <path d="M148 4 L172 4 L160 30 Z" fill="var(--wine-deep)"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="panel" style="display:grid;gap:14px">
+          <div class="eyebrow">Quem vai girar</div>
+          <div class="who" id="whoRoleta"></div>
+          <button class="btn" id="spin" type="button">Girar a roleta</button>
+          <div class="result" id="spinResult" hidden></div>
+          <p class="muted" style="margin:0;font-size:13px" id="roletaHint"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="v-baloes" hidden>
+      <div id="balloonRows" class="people"></div>
+    </section>
+
+    <section class="view" id="v-lancar" hidden>
+      <div class="panel">
+        <h2>Lançamento manual</h2>
+        <p class="muted" style="margin:0 0 14px;font-size:14px">Os agendamentos e as vendas entram sozinhos pelo Belle. Use este lançamento só para o que não aparece lá (Belle fora do ar, venda registrada em outro dia). Ele soma ao que veio do Belle.</p>
+        <form id="adjForm" class="form" autocomplete="off">
+          <div class="field"><label for="aQuem">Quem</label><select id="aQuem" required></select></div>
+          <div class="field"><label for="aTipo">Tipo</label>
+            <select id="aTipo"><option value="agendamento">Agendamentos</option><option value="venda">Venda</option></select></div>
+          <div class="field" data-for="agendamento"><label for="aQtd">Quantidade</label><input id="aQtd" type="number" min="1" max="50" value="1"></div>
+          <div class="field" data-for="agendamento"><label for="aMesmo">Quantos para hoje mesmo</label><input id="aMesmo" type="number" min="0" max="50" value="0"></div>
+          <div class="field" data-for="venda" hidden><label for="aValor">Valor da venda (R$)</label><input id="aValor" type="number" min="0" step="10"></div>
+          <div class="field" data-for="venda" hidden><label for="aCliente">Cliente</label><input id="aCliente" type="text" maxlength="60" placeholder="Primeiro nome"></div>
+          <div class="field" data-for="venda" hidden><span class="lbl">Pagamento</span><label class="check"><input id="aPago" type="checkbox"> Já recebeu 70% ou mais</label></div>
+          <div class="field full"><label for="aMotivo">Motivo</label><input id="aMotivo" type="text" maxlength="140" required placeholder="Ex.: agendamento feito pela recepção a pedido da SDR"></div>
+          <div class="field full"><button class="btn" type="submit" id="aSalvar">Lançar</button></div>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>Lançamentos manuais do dia</h2>
+        <div class="tablebox" id="adjList"></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-regras" hidden>
+      <div class="panel"><div class="rules" id="rulesText"></div></div>
+      <div class="panel" id="cfgPanel" hidden>
+        <h2>Metas e prêmios <span class="muted" style="font-weight:400;font-size:13px">só editoras do painel alteram</span></h2>
+        <form id="cfgForm" class="form">
+          <div class="field"><label for="cSdrBloco">SDR: agendamentos por roleta</label><input id="cSdrBloco" type="number" min="1"></div>
+          <div class="field"><label for="cSdrMesmo">SDR: para hoje mesmo, por balão</label><input id="cSdrMesmo" type="number" min="1"></div>
+          <div class="field"><label for="cSocBloco">Social Selling: agendamentos por roleta</label><input id="cSocBloco" type="number" min="1"></div>
+          <div class="field"><label for="cSocMesmo">Social Selling: para hoje mesmo, por balão</label><input id="cSocMesmo" type="number" min="1"></div>
+          <div class="field"><label for="cTicket">Venda que gira a roleta (R$)</label><input id="cTicket" type="number" min="0" step="100"></div>
+          <div class="field"><label for="cV1">Balão vermelho: vendas no dia (R$)</label><input id="cV1" type="number" min="0" step="500"></div>
+          <div class="field"><label for="cV2">Balão dourado: vendas no dia (R$)</label><input id="cV2" type="number" min="0" step="500"></div>
+          <div class="field"><label for="cPct">Mínimo pago para a venda contar (%)</label><input id="cPct" type="number" min="0" max="100"></div>
+          <div class="field"><label for="cMetaTime">Meta de vendas do time no dia (R$)</label><input id="cMetaTime" type="number" min="0" step="500"></div>
+          <div class="field full"><label for="cRoleta">Roleta: um prêmio por linha, com peso opcional depois de "|"</label><textarea id="cRoleta"></textarea></div>
+          <div class="field"><label for="cBEnc">Balão do encaixe (mesmo dia)</label><textarea id="cBEnc"></textarea></div>
+          <div class="field"><label for="cBVer">Balão vermelho</label><textarea id="cBVer"></textarea></div>
+          <div class="field"><label for="cBDou">Balão dourado</label><textarea id="cBDou"></textarea></div>
+          <div class="field full"><span class="lbl">Participantes</span><div id="cPart" class="form"></div></div>
+          <div class="field full"><button class="btn" type="submit">Salvar metas e prêmios</button></div>
+        </form>
+      </div>
+    </section>
+  </div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const DEFAULT_CFG = {
+  participantes: [
+    { nome: "Juliane", papel: "sdr", ativo: true },
+    { nome: "Bruna", papel: "sdr", ativo: true },
+    { nome: "Samilly", papel: "social", ativo: true },
+    { nome: "Marina", papel: "sdr", ativo: false },
+  ],
+  sdr: { bloco: 8, mesmoDia: 4 },
+  social: { bloco: 6, mesmoDia: 3 },
+  ticket: 2800, venda1: 10000, venda2: 15000, pctPago: 70, metaVendasTime: 25000,
+  roleta: [
+    { premio: "20 moedas Drene", peso: 1 }, { premio: "Vale maquiagem", peso: 1 }, { premio: "2 moedas Drene", peso: 1 },
+    { premio: "R$ 10,00", peso: 1 }, { premio: "Chocolate", peso: 1 },
+  ],
+  baloes: {
+    encaixe: [{ premio: "Unha + chocolate", peso: 1 }, { premio: "R$ 30 no Pix + chocolate", peso: 1 }],
+    vermelho: [{ premio: "Unha + chocolate", peso: 1 }, { premio: "R$ 30 no Pix + chocolate", peso: 1 }],
+    dourado: [{ premio: "Vale cinema", peso: 1 }, { premio: "Vale café da tarde", peso: 1 }],
+  },
+};
+const BALAO = {
+  encaixe: { nome: "Balão do encaixe", cor: "var(--rose)" },
+  vermelho: { nome: "Balão vermelho", cor: "var(--red)" },
+  dourado: { nome: "Balão dourado", cor: "var(--gold)" },
+};
+const PAPEL = { sdr: "SDR", social: "Social Selling" };
+const WHEEL_COLORS = ["var(--wine)", "var(--salmon)", "var(--rose)", "var(--wine-deep)", "var(--gold)", "var(--red)"];
+const TABS = ["placar", "roleta", "baloes", "lancar", "regras"];
+
+const S = { db: null, user: null, myId: null, canWrite: true, canEdit: false, cfg: DEFAULT_CFG, dias: {}, dia: null,
+  premios: [], ajustes: [], unsubDay: [], selRoleta: null, spinning: false, rot: 0, profiles: {} };
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const brl = (v) => (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const brl2 = (v) => (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const hojeNatal = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Fortaleza" }).format(new Date());
+const horaNatal = (iso) => new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Fortaleza", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+const diaSemana = (d) => new Date(d + "T12:00:00Z").getUTCDay();
+const fmtDia = (d) => { const [y, m, dd] = d.split("-"); return `${dd}/${m}/${y}`; };
+const fmtDiaCurto = (d) => { const [, m, dd] = d.split("-"); return `${dd}/${m}`; };
+
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 2800); }
+
+function sortear(lista) {
+  const itens = (lista || []).filter((x) => x.premio && x.peso > 0);
+  const total = itens.reduce((a, x) => a + x.peso, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < itens.length; i++) { r -= itens[i].peso; if (r < 0) return { item: itens[i], i }; }
+  return { item: itens[itens.length - 1], i: itens.length - 1 };
+}
+
+/* ---------- cálculo do placar ---------- */
+function regra(papel) { return papel === "social" ? S.cfg.social : S.cfg.sdr; }
+function participantes() { return S.cfg.participantes.filter((p) => p.ativo); }
+
+function calcular(p) {
+  const dia = S.dias[S.dia];
+  const belle = dia?.equipe?.[p.nome] || { agendamentos: [], vendas: [] };
+  const aj = S.ajustes.filter((a) => a.sdr === p.nome);
+  const r = regra(p.papel);
+  const pct = (S.cfg.pctPago ?? 70) / 100;
+  const ag = belle.agendamentos || [];
+  const A = ag.length + aj.filter((a) => a.tipo === "agendamento").reduce((s, a) => s + (a.qtd || 0), 0);
+  const M = ag.filter((a) => a.mesmoDia).length + aj.filter((a) => a.tipo === "agendamento").reduce((s, a) => s + (a.mesmoDia || 0), 0);
+  const vendas = (belle.vendas || []).map((v) => ({ ...v, fonte: "Belle", valida: v.pctPago + 1e-9 >= pct }))
+    .concat(aj.filter((a) => a.tipo === "venda").map((a) => ({ id: a.id, cliente: a.cliente || "", valor: a.valor || 0, pctPago: a.pago70 ? 1 : 0, fonte: "Manual", valida: !!a.pago70 })));
+  const F = vendas.filter((v) => v.valida).reduce((s, v) => s + v.valor, 0);
+  const blocos = Math.floor(A / r.bloco);
+  const ganhos = {
+    roleta: blocos + vendas.filter((v) => v.valida && v.valor >= S.cfg.ticket).length,
+    encaixe: Math.min(blocos, Math.floor(M / r.mesmoDia)),
+    vermelho: F >= S.cfg.venda1 ? 1 : 0,
+    dourado: F >= S.cfg.venda2 ? 1 : 0,
+  };
+  const meus = S.premios.filter((x) => x.sdr === p.nome);
+  const usados = {
+    roleta: meus.filter((x) => x.tipo === "roleta").length,
+    encaixe: meus.filter((x) => x.tipo === "balao" && x.origem === "encaixe").length,
+    vermelho: meus.filter((x) => x.tipo === "balao" && x.origem === "vermelho").length,
+    dourado: meus.filter((x) => x.tipo === "balao" && x.origem === "dourado").length,
+  };
+  const livre = (k) => Math.max(0, ganhos[k] - usados[k]);
+  return { p, r, A, M, ag, aj, vendas, F, ganhos, usados, livre,
+    roletasLivres: livre("roleta"), baloesLivres: livre("encaixe") + livre("vermelho") + livre("dourado"),
+    pendentes: vendas.filter((v) => !v.valida && v.valor >= S.cfg.ticket) };
+}
+
+/* ---------- topo ---------- */
+function listaDias() {
+  const hoje = hojeNatal();
+  const set = new Set(Object.keys(S.dias));
+  if (diaSemana(hoje) === 4) set.add(hoje);
+  return [...set].sort().reverse();
+}
+function diaPadrao() {
+  const hoje = hojeNatal(), dias = listaDias();
+  if (diaSemana(hoje) === 4) return hoje;
+  return dias.find((d) => d <= hoje && !S.dias[d]?.simulacao) || dias.find((d) => d <= hoje) || dias[0] || hoje;
+}
+function renderDias() {
+  const sel = $("#day"), dias = listaDias();
+  sel.innerHTML = dias.map((d) => `<option value="${d}">${fmtDia(d)}${S.dias[d]?.simulacao ? " · simulação" : ""}${d === hojeNatal() ? " · hoje" : ""}</option>`).join("");
+  if (!S.dia || !dias.includes(S.dia)) trocarDia(diaPadrao());
+  sel.value = S.dia;
+}
+function renderStatus() {
+  const d = S.dias[S.dia], hoje = hojeNatal(), el = $("#status");
+  const pills = [];
+  if (d?.simulacao) pills.push(`<span class="pill sim">Simulação</span>`);
+  if (d?.atualizadoEm) {
+    const idade = (Date.now() - new Date(d.atualizadoEm)) / 60000;
+    const atrasado = S.dia === hoje && idade > 80;
+    pills.push(`<span class="pill ${atrasado ? "warn" : "ok"}">Belle às ${horaNatal(d.atualizadoEm)}${atrasado ? " · atrasado" : ""}</span>`);
+  } else if (S.dia === hoje) {
+    pills.push(`<span class="pill warn">Aguardando a primeira leitura do Belle</span>`);
+  } else {
+    pills.push(`<span class="pill">Sem leitura do Belle</span>`);
+  }
+  if (!S.canWrite) pills.push(`<span class="pill">Somente leitura</span>`);
+  el.innerHTML = pills.join("");
+  const b = [];
+  if (d?.simulacao) b.push(`<div class="banner sim"><b>Simulação com dados reais do Belle.</b> Esta quinta foi antes do Quintou começar: os números mostram como o placar ficaria. Prêmios não podem ser sorteados aqui.</div>`);
+  if (d && d.corteEstimado && !d.simulacao) b.push(`<div class="banner warn"><b>Contagem estimada.</b> A leitura das 7h47 não aconteceu, então o início do dia foi estimado. Agendamentos da manhã podem estar faltando: confira os detalhes de cada uma e use Lançar se precisar.</div>`);
+  $("#banners").innerHTML = b.join("");
+}
+
+/* ---------- placar ---------- */
+const ICON_WHEEL = `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 1.5v13M1.5 8h13M3.4 3.4l9.2 9.2M12.6 3.4l-9.2 9.2" stroke="currentColor" stroke-width="1"/></svg>`;
+const iconBalloon = (cor) => `<svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="6.5" rx="5" ry="6" fill="${cor}"/><path d="M8 12.5l-1 1.5h2z M8 14c0 1-1 1.5-1 2" fill="${cor}" stroke="${cor}" stroke-width=".8"/></svg>`;
+const ICON_BALLOON = iconBalloon("currentColor");
+
+function chip(texto, livres, total, icon) {
+  if (!total) return "";
+  const cls = livres > 0 ? "rw live" : "rw done";
+  return `<span class="${cls}">${icon}${esc(texto)} ${livres > 0 ? `· ${livres} a abrir` : "· aberto"}</span>`;
+}
+
+function renderPlacar() {
+  const calc = participantes().map(calcular);
+  const A = calc.reduce((s, c) => s + c.A, 0), metaA = calc.reduce((s, c) => s + c.r.bloco, 0);
+  const F = calc.reduce((s, c) => s + c.F, 0), metaF = S.cfg.metaVendasTime;
+  const ganhos = calc.reduce((s, c) => s + c.ganhos.roleta + c.ganhos.encaixe + c.ganhos.vermelho + c.ganhos.dourado, 0);
+  const entregues = S.premios.filter((x) => x.entregue).length;
+  $("#team").innerHTML = `
+    <div class="kpi"><span class="eyebrow">Agendamentos do time</span><div class="v num">${A} <small>de ${metaA}</small></div><div class="bar"><i style="width:${Math.min(100, metaA ? A / metaA * 100 : 0)}%"></i></div></div>
+    <div class="kpi"><span class="eyebrow">Vendas que contam</span><div class="v num">${brl(F)} <small>de ${brl(metaF)}</small></div><div class="bar gold"><i style="width:${Math.min(100, metaF ? F / metaF * 100 : 0)}%"></i></div></div>
+    <div class="kpi"><span class="eyebrow">Prêmios liberados</span><div class="v num">${ganhos} <small>${S.premios.length} aberto${S.premios.length === 1 ? "" : "s"} · ${entregues} entregue${entregues === 1 ? "" : "s"}</small></div><div class="bar ok"><i style="width:${ganhos ? Math.min(100, entregues / ganhos * 100) : 0}%"></i></div></div>`;
+
+  $("#people").innerHTML = calc.map((c) => {
+    const resto = c.A % c.r.bloco, falta = c.r.bloco - resto;
+    const doBloco = [...Array(c.r.bloco)].map((_, i) => `<i class="${i < resto ? "on" : ""}"></i>`).join("");
+    const proxV = c.F >= S.cfg.venda2 ? null : c.F >= S.cfg.venda1 ? S.cfg.venda2 : S.cfg.venda1;
+    const ags = c.ag.map((a) => `<div class="it"><span class="num muted">${esc(a.hora)}</span><span>${esc(a.cliente)} <span class="muted">· ${esc(a.unidade)}</span></span><span class="tag ${a.mesmoDia ? "same" : ""}">${a.mesmoDia ? "hoje" : fmtDiaCurto(a.data)}</span></div>`).join("");
+    const vds = c.vendas.map((v) => `<div class="it"><span class="tag ${v.valida ? "ok" : "warn"}">${Math.round(v.pctPago * 100)}%</span><span>${esc(v.cliente || "—")} <span class="muted">· ${v.fonte}</span></span><b class="num">${brl2(v.valor)}</b></div>`).join("");
+    const ajs = c.aj.map((a) => `<div class="it"><span class="tag">manual</span><span>${a.tipo === "venda" ? `Venda ${brl2(a.valor)}` : `${a.qtd} agend. (${a.mesmoDia || 0} p/ hoje)`} <span class="muted">· ${esc(a.motivo)}</span></span><span></span></div>`).join("");
+    const pode = !S.dias[S.dia]?.simulacao && S.canWrite;
+    return `<article class="panel person">
+      <header><div><h3>${esc(c.p.nome)}</h3><span class="role">${PAPEL[c.p.papel]}</span></div>
+        <div class="rewards">${chip("Roleta", c.livre("roleta"), c.ganhos.roleta, ICON_WHEEL)}</div></header>
+      <div class="big"><div><b class="num">${c.A}</b><span>agendamentos</span></div><div class="same"><b class="num">${c.M}</b><span>para hoje mesmo</span></div></div>
+      <div style="display:grid;gap:6px">
+        <div class="line"><span>Próxima roleta</span><span class="num muted">faltam ${falta} de ${c.r.bloco}</span></div>
+        <div class="dots" aria-label="${resto} de ${c.r.bloco} agendamentos para a próxima roleta">${doBloco}</div>
+        <div class="line"><span>Balão do encaixe</span><span class="num muted">${Math.min(c.M - c.ganhos.encaixe * c.r.mesmoDia, c.r.mesmoDia)} de ${c.r.mesmoDia} para hoje mesmo</span></div>
+      </div>
+      <div style="display:grid;gap:6px">
+        <div class="line"><span>Vendas que contam</span><b class="num">${brl2(c.F)}</b></div>
+        <div class="bar gold"><i style="width:${Math.min(100, c.F / S.cfg.venda2 * 100)}%"></i></div>
+        <div class="line muted"><span>${proxV ? `Faltam ${brl(proxV - c.F)} para o ${proxV === S.cfg.venda1 ? "balão vermelho" : "balão dourado"}` : "Os dois balões de venda foram liberados"}</span></div>
+        ${c.pendentes.length ? `<div class="line"><span class="tag warn">${c.pendentes.length} venda${c.pendentes.length > 1 ? "s" : ""} acima de ${brl(S.cfg.ticket)} esperando ${S.cfg.pctPago}% pago</span></div>` : ""}
+      </div>
+      <div class="rewards">
+        ${chip(BALAO.encaixe.nome, c.livre("encaixe"), c.ganhos.encaixe, ICON_BALLOON)}
+        ${chip(BALAO.vermelho.nome, c.livre("vermelho"), c.ganhos.vermelho, ICON_BALLOON)}
+        ${chip(BALAO.dourado.nome, c.livre("dourado"), c.ganhos.dourado, ICON_BALLOON)}
+      </div>
+      ${pode && (c.roletasLivres || c.baloesLivres) ? `<div class="actions">
+        ${c.roletasLivres ? `<button class="btn small" data-go="roleta" data-who="${esc(c.p.nome)}">Girar roleta (${c.roletasLivres})</button>` : ""}
+        ${c.baloesLivres ? `<button class="btn small ghost" data-go="baloes">Estourar balão (${c.baloesLivres})</button>` : ""}</div>` : ""}
+      <details><summary>Ver agendamentos e vendas</summary>
+        <div class="eyebrow" style="margin-top:10px">Agendamentos (${c.ag.length} do Belle)</div>
+        <div class="list">${ags || `<div class="muted">Nenhum agendamento dela no Belle neste dia.</div>`}</div>
+        <div class="eyebrow" style="margin-top:12px">Vendas</div>
+        <div class="list">${vds || `<div class="muted">Nenhuma venda de cliente agendada por ela.</div>`}</div>
+        ${ajs ? `<div class="eyebrow" style="margin-top:12px">Lançamentos manuais</div><div class="list">${ajs}</div>` : ""}
+      </details>
+    </article>`;
+  }).join("") || `<div class="panel empty">Nenhuma participante ativa. Ative em Regras.</div>`;
+
+  renderPrizeLog();
+  const totR = calc.reduce((s, c) => s + c.roletasLivres, 0), totB = calc.reduce((s, c) => s + c.baloesLivres, 0);
+  const sim = S.dias[S.dia]?.simulacao;
+  $("#bRoleta").hidden = !totR || sim; $("#bRoleta").textContent = totR;
+  $("#bBaloes").hidden = !totB || sim; $("#bBaloes").textContent = totB;
+}
+
+async function nomes(ids) {
+  ids = [...new Set(ids.filter(Boolean))];
+  if (!S.user || !ids.length) return {};
+  try { return await S.user.profiles(ids); } catch { return {}; }
+}
+
+async function renderPrizeLog() {
+  const rows = [...S.premios].sort((a, b) => (b.em || "").localeCompare(a.em || ""));
+  $("#prizeCount").textContent = rows.length ? `${rows.length} aberto${rows.length > 1 ? "s" : ""}` : "";
+  if (!rows.length) { $("#prizeLog").innerHTML = `<div class="empty">Nenhum prêmio aberto neste dia.</div>`; return; }
+  const ps = await nomes(rows.map((r) => r.por));
+  $("#prizeLog").innerHTML = `<table><thead><tr><th>Hora</th><th>Quem</th><th>Prêmio</th><th>Como ganhou</th><th>Aberto por</th><th>Entregue</th></tr></thead><tbody>${rows.map((r) => `
+    <tr><td class="num">${r.em ? horaNatal(r.em) : ""}</td><td><b>${esc(r.sdr)}</b></td><td>${esc(r.premio)}</td>
+    <td class="muted">${r.tipo === "roleta" ? "Roleta" : esc(BALAO[r.origem]?.nome || "Balão")}</td>
+    <td class="muted">${esc(ps[r.por]?.name || "")}</td>
+    <td><label class="check"><input type="checkbox" data-entregue="${esc(r.id)}" ${r.entregue ? "checked" : ""} ${S.canWrite ? "" : "disabled"} aria-label="Entregue"></label></td></tr>`).join("")}</tbody></table>`;
+}
+
+/* ---------- roleta ---------- */
+function desenharRoleta() {
+  const itens = S.cfg.roleta.filter((x) => x.premio);
+  const n = itens.length || 1, a = 360 / n, R = 150, C = 160;
+  const pt = (deg, r) => [C + r * Math.sin(deg * Math.PI / 180), C - r * Math.cos(deg * Math.PI / 180)];
+  $("#wheel").innerHTML = itens.map((it, i) => {
+    const [x1, y1] = pt(i * a, R), [x2, y2] = pt((i + 1) * a, R);
+    const mid = (i + .5) * a, [tx, ty] = pt(mid, R * .6);
+    const words = it.premio.split(" "), lines = [];
+    words.forEach((w) => { const l = lines[lines.length - 1]; if (l && (l + " " + w).length <= 11) lines[lines.length - 1] = l + " " + w; else lines.push(w); });
+    const tsp = lines.slice(0, 3).map((l, j) => `<tspan x="${tx.toFixed(1)}" dy="${j ? 13 : -(lines.length - 1) * 6.5}">${esc(l)}</tspan>`).join("");
+    return `<path d="M${C} ${C} L${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 ${a > 180 ? 1 : 0} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z" fill="${WHEEL_COLORS[i % WHEEL_COLORS.length]}" stroke="var(--surface)" stroke-width="2"></path>
+      <text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" transform="rotate(${mid} ${tx.toFixed(1)} ${ty.toFixed(1)})" text-anchor="middle" dominant-baseline="middle" fill="var(--on-accent)" font-family="Poppins, sans-serif" font-weight="600" font-size="12">${tsp}</text>`;
+  }).join("") + `<circle cx="${C}" cy="${C}" r="${R}" fill="none" stroke="var(--wine-deep)" stroke-width="4"></circle>`;
+}
+
+function renderRoleta() {
+  const calc = participantes().map(calcular);
+  if (!S.selRoleta || !calc.some((c) => c.p.nome === S.selRoleta)) S.selRoleta = (calc.find((c) => c.roletasLivres) || calc[0])?.p.nome || null;
+  $("#whoRoleta").innerHTML = calc.map((c) => `<button type="button" data-sel="${esc(c.p.nome)}" aria-pressed="${c.p.nome === S.selRoleta}"><b>${esc(c.p.nome)}</b><small>${c.roletasLivres ? `${c.roletasLivres} giro${c.roletasLivres > 1 ? "s" : ""} liberado${c.roletasLivres > 1 ? "s" : ""}` : `faltam ${c.r.bloco - (c.A % c.r.bloco)} agend.`}</small></button>`).join("");
+  const sel = calc.find((c) => c.p.nome === S.selRoleta);
+  const sim = S.dias[S.dia]?.simulacao;
+  $("#spin").disabled = S.spinning || !sel || !sel.roletasLivres || sim || !S.canWrite;
+  $("#roletaHint").textContent = sim ? "Dia de simulação: a roleta fica travada." :
+    `Gira a cada ${S.cfg.sdr.bloco} agendamentos (SDR) ou ${S.cfg.social.bloco} (Social Selling) e a cada venda de ${brl(S.cfg.ticket)} ou mais com ${S.cfg.pctPago}% pago.`;
+}
+
+async function travar(nome) {
+  try {
+    const r = await S.db.doc(`travas/${S.dia}_${nome}`).acquire({ holder: S.tabId, ttlMs: 12000 });
+    return r.acquired;
+  } catch { return true; }
+}
+
+async function girar() {
+  if (S.spinning || !S.db) return;
+  const nome = S.selRoleta, p = participantes().find((x) => x.nome === nome);
+  if (!p) return;
+  S.spinning = true; renderRoleta();
+  try {
+    if (!(await travar(nome))) { toast("Alguém já está girando para ela. Espere alguns segundos."); return; }
+    const snap = await S.db.collection("premios").where("dia", "==", S.dia).get();
+    S.premios = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    if (!calcular(p).roletasLivres) { toast("Os giros dela já foram usados."); return; }
+    const itens = S.cfg.roleta.filter((x) => x.premio);
+    const { item, i } = sortear(itens);
+    await S.db.collection("premios").add({ dia: S.dia, sdr: nome, tipo: "roleta", origem: "roleta", premio: item.premio, por: S.myId, em: new Date().toISOString(), entregue: false });
+    const a = 360 / itens.length, alvo = (360 - ((i + .5) * a + (Math.random() - .5) * a * .6)) % 360;
+    S.rot = S.rot + 360 * 6 + ((alvo - (S.rot % 360)) + 360) % 360;
+    $("#spinResult").hidden = true;
+    $("#wheelRot").style.transform = `rotate(${S.rot}deg)`;
+    const dur = matchMedia("(prefers-reduced-motion: reduce)").matches ? 50 : 5100;
+    await new Promise((res) => setTimeout(res, dur));
+    $("#spinResult").innerHTML = `<span class="eyebrow">${esc(nome)} ganhou</span><b>${esc(item.premio)}</b>`;
+    $("#spinResult").hidden = false;
+  } catch (e) {
+    toast("Não foi possível registrar o giro. Confira a conexão e tente de novo.");
+  } finally { S.spinning = false; renderRoleta(); }
+}
+
+/* ---------- balões ---------- */
+function svgBalao(cor) {
+  return `<svg viewBox="0 0 72 104" aria-hidden="true"><path d="M36 4C18 4 6 18 6 36c0 20 16 36 30 40 14-4 30-20 30-40C66 18 54 4 36 4z" fill="${cor}"/>
+    <ellipse cx="24" cy="24" rx="7" ry="11" fill="#fff" opacity=".28" transform="rotate(-20 24 24)"/>
+    <path d="M31 76h10l-5 6z" fill="${cor}"/><path d="M36 82c-4 6 4 10 0 20" fill="none" stroke="var(--ink-soft)" stroke-width="1.5"/></svg>`;
+}
+function renderBaloes() {
+  const calc = participantes().map(calcular);
+  const sim = S.dias[S.dia]?.simulacao;
+  $("#balloonRows").innerHTML = calc.map((c) => {
+    const abertos = S.premios.filter((x) => x.sdr === c.p.nome && x.tipo === "balao");
+    const fechados = [];
+    ["encaixe", "vermelho", "dourado"].forEach((k) => { for (let i = 0; i < c.livre(k); i++) fechados.push(k); });
+    const itens = fechados.map((k) => `<button class="balloon" type="button" data-pop="${esc(c.p.nome)}" data-kind="${k}" ${sim || !S.canWrite ? "disabled" : ""} aria-label="Estourar ${BALAO[k].nome} de ${esc(c.p.nome)}">${svgBalao(BALAO[k].cor)}<span>${BALAO[k].nome}</span></button>`).join("")
+      + abertos.map((x) => `<div class="opened"><small>${esc(BALAO[x.origem]?.nome || "Balão")}</small><b>${esc(x.premio)}</b></div>`).join("");
+    const como = [`${c.r.mesmoDia} dos ${c.r.bloco} agendamentos para hoje mesmo`, `${brl(S.cfg.venda1)} em vendas no dia`, `${brl(S.cfg.venda2)} em vendas no dia`];
+    return `<article class="panel person"><header><div><h3>${esc(c.p.nome)}</h3><span class="role">${PAPEL[c.p.papel]}</span></div></header>
+      <div class="balloons">${itens || `<p class="muted" style="margin:0;font-size:14px">Nenhum balão ainda. Balões saem com ${como.join(", ")}.</p>`}</div></article>`;
+  }).join("");
+}
+
+async function estourar(btn) {
+  const nome = btn.dataset.pop, kind = btn.dataset.kind, p = participantes().find((x) => x.nome === nome);
+  if (!p || !S.db || btn.disabled) return;
+  btn.disabled = true;
+  try {
+    if (!(await travar(nome))) { toast("Alguém já está abrindo um prêmio dela. Espere alguns segundos."); btn.disabled = false; return; }
+    const snap = await S.db.collection("premios").where("dia", "==", S.dia).get();
+    S.premios = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    if (!calcular(p).livre(kind)) { toast("Esse balão já foi estourado."); renderAll(); return; }
+    const { item } = sortear(S.cfg.baloes[kind]);
+    btn.classList.add("popped");
+    await S.db.collection("premios").add({ dia: S.dia, sdr: nome, tipo: "balao", origem: kind, premio: item.premio, por: S.myId, em: new Date().toISOString(), entregue: false });
+    toast(`${nome} ganhou: ${item.premio}`);
+  } catch { toast("Não foi possível registrar o balão. Tente de novo."); btn.disabled = false; }
+}
+
+/* ---------- lançamentos ---------- */
+function renderLancar() {
+  const sel = $("#aQuem"), atual = sel.value;
+  sel.innerHTML = participantes().map((p) => `<option>${esc(p.nome)}</option>`).join("");
+  if (atual) sel.value = atual;
+  const tipo = $("#aTipo").value;
+  document.querySelectorAll("#adjForm [data-for]").forEach((el) => { el.hidden = el.dataset.for !== tipo; });
+  $("#aSalvar").disabled = !S.canWrite || !!S.dias[S.dia]?.simulacao;
+  const rows = [...S.ajustes].sort((a, b) => (b.em || "").localeCompare(a.em || ""));
+  $("#adjList").innerHTML = rows.length ? `<table><thead><tr><th>Hora</th><th>Quem</th><th>O quê</th><th>Motivo</th><th></th></tr></thead><tbody>${rows.map((a) => `
+    <tr><td class="num">${a.em ? horaNatal(a.em) : ""}</td><td><b>${esc(a.sdr)}</b></td>
+    <td>${a.tipo === "venda" ? `Venda ${brl2(a.valor)} ${a.pago70 ? `<span class="tag ok">${S.cfg.pctPago}% pago</span>` : `<span class="tag warn">sem ${S.cfg.pctPago}%</span>`}` : `${a.qtd} agendamento${a.qtd > 1 ? "s" : ""} · ${a.mesmoDia || 0} para hoje`}</td>
+    <td class="muted">${esc(a.motivo)}</td><td>${S.canWrite ? `<button class="btn small ghost" data-del="${esc(a.id)}">Excluir</button>` : ""}</td></tr>`).join("")}</tbody></table>`
+    : `<div class="empty">Nenhum lançamento manual neste dia.</div>`;
+}
+
+async function salvarAjuste(ev) {
+  ev.preventDefault();
+  if (!S.db) return;
+  const tipo = $("#aTipo").value, motivo = $("#aMotivo").value.trim();
+  if (!motivo) { toast("Escreva o motivo do lançamento."); return; }
+  const base = { dia: S.dia, sdr: $("#aQuem").value, tipo, motivo, por: S.myId, em: new Date().toISOString() };
+  if (tipo === "agendamento") {
+    const qtd = parseInt($("#aQtd").value, 10) || 0, mesmo = parseInt($("#aMesmo").value, 10) || 0;
+    if (qtd < 1) { toast("Informe pelo menos 1 agendamento."); return; }
+    if (mesmo > qtd) { toast("Os agendamentos para hoje não podem passar do total."); return; }
+    Object.assign(base, { qtd, mesmoDia: mesmo });
+  } else {
+    const valor = parseFloat($("#aValor").value);
+    if (!(valor > 0)) { toast("Informe o valor da venda."); return; }
+    Object.assign(base, { valor, cliente: $("#aCliente").value.trim(), pago70: $("#aPago").checked });
+  }
+  $("#aSalvar").disabled = true;
+  try { await S.db.collection("ajustes").add(base); toast("Lançado."); ev.target.reset(); renderLancar(); }
+  catch { toast("Não foi possível lançar. Tente de novo."); }
+  finally { $("#aSalvar").disabled = false; }
+}
+
+/* ---------- regras e configuração ---------- */
+const linhas = (lista) => (lista || []).map((x) => x.peso && x.peso !== 1 ? `${x.premio} | ${x.peso}` : x.premio).join("\n");
+const lerLinhas = (txt) => txt.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => { const [p, w] = l.split("|").map((s) => s.trim()); return { premio: p, peso: w ? Math.max(0, parseFloat(w.replace(",", ".")) || 0) : 1 }; }).filter((x) => x.premio);
+const nomesPremios = (lista) => (lista || []).map((x) => esc(x.premio)).join(", ") || "sem prêmios";
+
+function renderRegras() {
+  const c = S.cfg;
+  $("#rulesText").innerHTML = `
+    <h3>Como funciona o Quintou</h3>
+    <p>Toda quinta-feira o comercial trabalha focado em agendar e vender. O placar zera a cada quinta e conta só o que foi feito naquele dia.</p>
+    <h3>Roleta</h3>
+    <ul>
+      <li>SDR: a cada <b>${c.sdr.bloco} agendamentos</b> feitos no dia, gira a roleta uma vez.</li>
+      <li>Social Selling: a cada <b>${c.social.bloco} agendamentos</b> feitos no dia, gira a roleta uma vez.</li>
+      <li>Cada venda de <b>${brl(c.ticket)} ou mais</b> também dá um giro.</li>
+      <li>Prêmios da roleta: ${nomesPremios(c.roleta)}.</li>
+    </ul>
+    <h3>Balões</h3>
+    <ul>
+      <li><b>Balão do encaixe:</b> em cada bloco de ${c.sdr.bloco} agendamentos (SDR) ou ${c.social.bloco} (Social Selling), se pelo menos ${c.sdr.mesmoDia} (SDR) ou ${c.social.mesmoDia} (Social Selling) forem para o mesmo dia, estoura um balão. Prêmios: ${nomesPremios(c.baloes.encaixe)}.</li>
+      <li><b>Balão vermelho:</b> ${brl(c.venda1)} em vendas no dia. Prêmios: ${nomesPremios(c.baloes.vermelho)}.</li>
+      <li><b>Balão dourado:</b> ${brl(c.venda2)} em vendas no dia. Prêmios: ${nomesPremios(c.baloes.dourado)}. Quem chega aos ${brl(c.venda2)} estoura os dois balões de venda.</li>
+    </ul>
+    <h3>Regra obrigatória das vendas</h3>
+    <p>Uma venda só conta para roleta e balões quando a cliente já pagou pelo menos <b>${c.pctPago}%</b> do valor. A venda que ainda não chegou lá aparece como “esperando ${c.pctPago}% pago” e passa a contar sozinha quando o pagamento entra no Belle.</p>
+    <h3>De onde vêm os números</h3>
+    <ul>
+      <li>Os agendamentos vêm do Belle: conta o que cada uma incluiu no dia, uma vez por cliente e data. Desmarcados e cancelados saem da conta. Avaliação e serviço avulso da mesma cliente no mesmo dia contam como um.</li>
+      <li>“Para hoje mesmo” é o agendamento feito na quinta para a própria quinta.</li>
+      <li>As vendas vêm do Belle e ficam com quem agendou a cliente. O percentual pago é calculado pelas parcelas confirmadas.</li>
+      <li>O Belle é lido de hora em hora nas quintas, das 7h47 às 18h47. O horário da última leitura fica no topo da página.</li>
+    </ul>`;
+  $("#cfgPanel").hidden = !S.canEdit;
+  if (!S.canEdit) return;
+  const set = (id, v) => { const el = $(id); if (document.activeElement !== el) el.value = v; };
+  set("#cSdrBloco", c.sdr.bloco); set("#cSdrMesmo", c.sdr.mesmoDia); set("#cSocBloco", c.social.bloco); set("#cSocMesmo", c.social.mesmoDia);
+  set("#cTicket", c.ticket); set("#cV1", c.venda1); set("#cV2", c.venda2); set("#cPct", c.pctPago); set("#cMetaTime", c.metaVendasTime);
+  set("#cRoleta", linhas(c.roleta)); set("#cBEnc", linhas(c.baloes.encaixe)); set("#cBVer", linhas(c.baloes.vermelho)); set("#cBDou", linhas(c.baloes.dourado));
+  if (!$("#cPart").contains(document.activeElement)) {
+    $("#cPart").innerHTML = c.participantes.map((p, i) => `<div class="field"><label class="check"><input type="checkbox" data-pa="${i}" ${p.ativo ? "checked" : ""}> ${esc(p.nome)}</label>
+      <select data-pp="${i}" aria-label="Função de ${esc(p.nome)}"><option value="sdr" ${p.papel === "sdr" ? "selected" : ""}>SDR</option><option value="social" ${p.papel === "social" ? "selected" : ""}>Social Selling</option></select></div>`).join("");
+  }
+}
+
+async function salvarCfg(ev) {
+  ev.preventDefault();
+  const n = (id) => Math.max(0, parseFloat($(id).value) || 0);
+  const cfg = {
+    participantes: S.cfg.participantes.map((p, i) => ({ nome: p.nome, ativo: $(`[data-pa="${i}"]`).checked, papel: $(`[data-pp="${i}"]`).value })),
+    sdr: { bloco: Math.max(1, n("#cSdrBloco")), mesmoDia: Math.max(1, n("#cSdrMesmo")) },
+    social: { bloco: Math.max(1, n("#cSocBloco")), mesmoDia: Math.max(1, n("#cSocMesmo")) },
+    ticket: n("#cTicket"), venda1: n("#cV1"), venda2: n("#cV2"), pctPago: Math.min(100, n("#cPct")), metaVendasTime: n("#cMetaTime"),
+    roleta: lerLinhas($("#cRoleta").value),
+    baloes: { encaixe: lerLinhas($("#cBEnc").value), vermelho: lerLinhas($("#cBVer").value), dourado: lerLinhas($("#cBDou").value) },
+  };
+  if (!cfg.roleta.length || !cfg.baloes.encaixe.length || !cfg.baloes.vermelho.length || !cfg.baloes.dourado.length) { toast("Cada lista precisa de pelo menos um prêmio."); return; }
+  try { await S.db.doc("config/atual").set(cfg); toast("Metas e prêmios salvos."); }
+  catch { toast("Não foi possível salvar. Só editoras do painel podem alterar as metas."); }
+}
+
+/* ---------- navegação e dados ---------- */
+function abrirAba(t) {
+  if (!TABS.includes(t)) t = "placar";
+  document.querySelectorAll(".tab").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === t));
+  TABS.forEach((x) => { $(`#v-${x}`).hidden = x !== t; });
+  try { history.replaceState(null, "", "#" + t); } catch {}
+  renderAll();
+}
+function renderAll() {
+  renderStatus();
+  const aba = TABS.find((t) => !$(`#v-${t}`).hidden) || "placar";
+  renderPlacar();
+  if (aba === "roleta") renderRoleta();
+  if (aba === "baloes") renderBaloes();
+  if (aba === "lancar") renderLancar();
+  if (aba === "regras") renderRegras();
+}
+
+function trocarDia(d) {
+  S.dia = d; S.premios = []; S.ajustes = [];
+  $("#spinResult").hidden = true;
+  S.unsubDay.forEach((u) => u()); S.unsubDay = [];
+  if (S.db) {
+    S.unsubDay.push(S.db.collection("premios").where("dia", "==", d).onSnapshot((s) => { S.premios = s.docs.map((x) => ({ id: x.id, ...x.data() })); renderAll(); }, () => {}));
+    S.unsubDay.push(S.db.collection("ajustes").where("dia", "==", d).onSnapshot((s) => { S.ajustes = s.docs.map((x) => ({ id: x.id, ...x.data() })); renderAll(); }, () => {}));
+  }
+  renderAll();
+}
+
+document.addEventListener("click", (ev) => {
+  const t = ev.target.closest("[data-tab]"); if (t) { abrirAba(t.dataset.tab); return; }
+  const go = ev.target.closest("[data-go]"); if (go) { if (go.dataset.who) S.selRoleta = go.dataset.who; abrirAba(go.dataset.go); window.scrollTo({ top: 0 }); return; }
+  const sel = ev.target.closest("[data-sel]"); if (sel) { S.selRoleta = sel.dataset.sel; $("#spinResult").hidden = true; renderRoleta(); return; }
+  const pop = ev.target.closest("[data-pop]"); if (pop) { estourar(pop); return; }
+  const del = ev.target.closest("[data-del]"); if (del && S.db) { S.db.doc("ajustes/" + del.dataset.del).delete().then(() => toast("Lançamento excluído."), () => toast("Não foi possível excluir.")); return; }
+});
+document.addEventListener("change", (ev) => {
+  const ent = ev.target.closest("[data-entregue]");
+  if (ent && S.db) S.db.doc("premios/" + ent.dataset.entregue).update({ entregue: ent.checked }).catch(() => { ent.checked = !ent.checked; toast("Não foi possível marcar a entrega."); });
+});
+$("#day").addEventListener("change", (e) => trocarDia(e.target.value));
+$("#spin").addEventListener("click", girar);
+$("#aTipo").addEventListener("change", renderLancar);
+$("#adjForm").addEventListener("submit", salvarAjuste);
+$("#cfgForm").addEventListener("submit", salvarCfg);
+
+(async function iniciar() {
+  S.tabId = Math.random().toString(36).slice(2);
+  desenharRoleta();
+  renderDias();
+  abrirAba((location.hash || "").slice(1));
+  const db = await window.claude?.use?.("db");
+  const user = await window.claude?.use?.("user");
+  S.user = user;
+  if (user) {
+    S.myId = await user.id();
+    S.canEdit = await user.canEdit();
+    const w = await user.can("data.write");
+    S.canWrite = w !== false;
+  }
+  if (!db) { S.canWrite = false; renderAll(); return; }
+  S.db = db;
+  db.doc("config/atual").onSnapshot((s) => {
+    const c = s.exists ? s.data() : null;
+    S.cfg = c ? { ...DEFAULT_CFG, ...c, sdr: { ...DEFAULT_CFG.sdr, ...c.sdr }, social: { ...DEFAULT_CFG.social, ...c.social }, baloes: { ...DEFAULT_CFG.baloes, ...c.baloes } } : DEFAULT_CFG;
+    desenharRoleta(); renderAll();
+  }, () => {});
+  db.collection("dias").onSnapshot((s) => {
+    S.dias = {}; s.docs.forEach((d) => { S.dias[d.id] = d.data(); });
+    renderDias(); renderAll();
+  }, () => {});
+  trocarDia(S.dia);
+  setInterval(renderStatus, 60000);
+})();
+</script>
