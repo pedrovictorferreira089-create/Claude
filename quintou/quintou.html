@@ -154,20 +154,6 @@ td { padding: 8px; border-bottom: 1px solid var(--surface-2); vertical-align: mi
 .result { text-align: center; padding: 18px; border-radius: var(--r); background: var(--surface-2); display: grid; gap: 4px; }
 .result b { font: 700 24px/1.2 var(--f-display); color: var(--wine-deep); }
 
-/* balões */
-.balloons { display: flex; flex-wrap: wrap; gap: 14px; }
-.balloon { border: 0; background: none; padding: 0; cursor: pointer; display: grid; justify-items: center; gap: 4px; width: 104px; }
-.balloon svg { width: 72px; height: 104px; transition: transform .25s ease; }
-.balloon:not([disabled]):hover svg { transform: translateY(-4px) rotate(-3deg); }
-.balloon span { font-size: 12px; font-weight: 600; color: var(--ink-soft); text-align: center; }
-.balloon.popped svg { animation: pop .45s ease forwards; }
-.balloon .prize { font: 600 13px/1.3 var(--f-display); color: var(--wine-deep); text-align: center; }
-.balloon[disabled] { cursor: default; }
-@keyframes pop { 0% { transform: scale(1); opacity: 1; } 60% { transform: scale(1.35); opacity: .6; } 100% { transform: scale(.2); opacity: 0; } }
-.opened { display: grid; justify-items: center; align-content: center; gap: 6px; width: 104px; min-height: 140px; border-radius: 14px; border: 1px dashed var(--line); padding: 8px; text-align: center; }
-.opened b { font: 600 13px/1.3 var(--f-display); color: var(--wine-deep); }
-.opened small { font-size: 11px; color: var(--ink-soft); }
-
 /* formulários */
 .form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
 .field { display: grid; gap: 4px; min-width: 0; }
@@ -194,7 +180,7 @@ textarea { min-height: 120px; resize: vertical; font-size: 13px; }
     <div class="brand">
       <small>Drenesse · Comercial</small>
       <h1>Quintou<span>!</span></h1>
-      <p>Toda quinta: mais agendamentos, encaixes no mesmo dia e vendas de ticket alto.</p>
+      <p>Toda quinta: mais agendamentos, encaixes no mesmo dia e vendas de ticket alto. Cada meta batida vale um giro na roleta.</p>
     </div>
     <div class="daybox">
       <label for="day">Quinta-feira</label>
@@ -208,7 +194,6 @@ textarea { min-height: 120px; resize: vertical; font-size: 13px; }
   <div class="wrap" role="tablist">
     <button class="tab" role="tab" data-tab="placar" aria-selected="true">Placar</button>
     <button class="tab" role="tab" data-tab="roleta" aria-selected="false">Roleta <span class="badge" id="bRoleta" hidden></span></button>
-    <button class="tab" role="tab" data-tab="baloes" aria-selected="false">Balões <span class="badge" id="bBaloes" hidden></span></button>
     <button class="tab" role="tab" data-tab="lancar" aria-selected="false">Lançar</button>
     <button class="tab" role="tab" data-tab="regras" aria-selected="false">Regras</button>
   </div>
@@ -248,10 +233,6 @@ textarea { min-height: 120px; resize: vertical; font-size: 13px; }
       </div>
     </section>
 
-    <section class="view" id="v-baloes" hidden>
-      <div id="balloonRows" class="people"></div>
-    </section>
-
     <section class="view" id="v-lancar" hidden>
       <div class="panel">
         <h2>Lançamento manual</h2>
@@ -281,18 +262,13 @@ textarea { min-height: 120px; resize: vertical; font-size: 13px; }
         <h2>Metas e prêmios <span class="muted" style="font-weight:400;font-size:13px">só editoras do painel alteram</span></h2>
         <form id="cfgForm" class="form">
           <div class="field"><label for="cSdrBloco">SDR: agendamentos por roleta</label><input id="cSdrBloco" type="number" min="1"></div>
-          <div class="field"><label for="cSdrMesmo">SDR: para hoje mesmo, por balão</label><input id="cSdrMesmo" type="number" min="1"></div>
+          <div class="field"><label for="cSdrMesmo">SDR: para hoje mesmo, por giro extra</label><input id="cSdrMesmo" type="number" min="1"></div>
           <div class="field"><label for="cSocBloco">Social Selling: agendamentos por roleta</label><input id="cSocBloco" type="number" min="1"></div>
-          <div class="field"><label for="cSocMesmo">Social Selling: para hoje mesmo, por balão</label><input id="cSocMesmo" type="number" min="1"></div>
+          <div class="field"><label for="cSocMesmo">Social Selling: para hoje mesmo, por giro extra</label><input id="cSocMesmo" type="number" min="1"></div>
           <div class="field"><label for="cTicket">Venda que gira a roleta (R$)</label><input id="cTicket" type="number" min="0" step="100"></div>
-          <div class="field"><label for="cV1">Balão vermelho: vendas no dia (R$)</label><input id="cV1" type="number" min="0" step="500"></div>
-          <div class="field"><label for="cV2">Balão dourado: vendas no dia (R$)</label><input id="cV2" type="number" min="0" step="500"></div>
           <div class="field"><label for="cPct">Mínimo pago para a venda contar (%)</label><input id="cPct" type="number" min="0" max="100"></div>
           <div class="field"><label for="cMetaTime">Meta de vendas do time no dia (R$)</label><input id="cMetaTime" type="number" min="0" step="500"></div>
           <div class="field full"><label for="cRoleta">Roleta: um prêmio por linha, com peso opcional depois de "|"</label><textarea id="cRoleta"></textarea></div>
-          <div class="field"><label for="cBEnc">Balão do encaixe (mesmo dia)</label><textarea id="cBEnc"></textarea></div>
-          <div class="field"><label for="cBVer">Balão vermelho</label><textarea id="cBVer"></textarea></div>
-          <div class="field"><label for="cBDou">Balão dourado</label><textarea id="cBDou"></textarea></div>
           <div class="field full"><span class="lbl">Participantes</span><div id="cPart" class="form"></div></div>
           <div class="field full"><button class="btn" type="submit">Salvar metas e prêmios</button></div>
         </form>
@@ -308,29 +284,18 @@ const DEFAULT_CFG = {
     { nome: "Juliane", papel: "sdr", ativo: true },
     { nome: "Bruna", papel: "sdr", ativo: true },
     { nome: "Samilly", papel: "social", ativo: true },
-    { nome: "Marina", papel: "sdr", ativo: false },
   ],
   sdr: { bloco: 8, mesmoDia: 4 },
   social: { bloco: 6, mesmoDia: 3 },
-  ticket: 2800, venda1: 10000, venda2: 15000, pctPago: 70, metaVendasTime: 25000,
+  ticket: 2800, pctPago: 70, metaVendasTime: 25000,
   roleta: [
-    { premio: "20 moedas Drene", peso: 1 }, { premio: "Vale maquiagem", peso: 1 }, { premio: "2 moedas Drene", peso: 1 },
+    { premio: "2 moedas Drene", peso: 1 }, { premio: "Vale maquiagem", peso: 1 }, { premio: "2 moedas Drene", peso: 1 },
     { premio: "R$ 10,00", peso: 1 }, { premio: "Chocolate", peso: 1 },
   ],
-  baloes: {
-    encaixe: [{ premio: "Unha + chocolate", peso: 1 }, { premio: "R$ 30 no Pix + chocolate", peso: 1 }],
-    vermelho: [{ premio: "Unha + chocolate", peso: 1 }, { premio: "R$ 30 no Pix + chocolate", peso: 1 }],
-    dourado: [{ premio: "Vale cinema", peso: 1 }, { premio: "Vale café da tarde", peso: 1 }],
-  },
-};
-const BALAO = {
-  encaixe: { nome: "Balão do encaixe", cor: "var(--rose)" },
-  vermelho: { nome: "Balão vermelho", cor: "var(--red)" },
-  dourado: { nome: "Balão dourado", cor: "var(--gold)" },
 };
 const PAPEL = { sdr: "SDR", social: "Social Selling" };
 const WHEEL_COLORS = ["var(--wine)", "var(--salmon)", "var(--rose)", "var(--wine-deep)", "var(--gold)", "var(--red)"];
-const TABS = ["placar", "roleta", "baloes", "lancar", "regras"];
+const TABS = ["placar", "roleta", "lancar", "regras"];
 
 const S = { db: null, user: null, myId: null, canWrite: true, canEdit: false, cfg: DEFAULT_CFG, dias: {}, dia: null,
   premios: [], ajustes: [], unsubDay: [], selRoleta: null, spinning: false, rot: 0, profiles: {} };
@@ -372,22 +337,11 @@ function calcular(p) {
     .concat(aj.filter((a) => a.tipo === "venda").map((a) => ({ id: a.id, cliente: a.cliente || "", valor: a.valor || 0, pctPago: a.pago70 ? 1 : 0, fonte: "Manual", valida: !!a.pago70 })));
   const F = vendas.filter((v) => v.valida).reduce((s, v) => s + v.valor, 0);
   const blocos = Math.floor(A / r.bloco);
-  const ganhos = {
-    roleta: blocos + vendas.filter((v) => v.valida && v.valor >= S.cfg.ticket).length,
-    encaixe: Math.min(blocos, Math.floor(M / r.mesmoDia)),
-    vermelho: F >= S.cfg.venda1 ? 1 : 0,
-    dourado: F >= S.cfg.venda2 ? 1 : 0,
-  };
-  const meus = S.premios.filter((x) => x.sdr === p.nome);
-  const usados = {
-    roleta: meus.filter((x) => x.tipo === "roleta").length,
-    encaixe: meus.filter((x) => x.tipo === "balao" && x.origem === "encaixe").length,
-    vermelho: meus.filter((x) => x.tipo === "balao" && x.origem === "vermelho").length,
-    dourado: meus.filter((x) => x.tipo === "balao" && x.origem === "dourado").length,
-  };
-  const livre = (k) => Math.max(0, ganhos[k] - usados[k]);
-  return { p, r, A, M, ag, aj, vendas, F, ganhos, usados, livre,
-    roletasLivres: livre("roleta"), baloesLivres: livre("encaixe") + livre("vermelho") + livre("dourado"),
+  const encaixe = Math.min(blocos, Math.floor(M / r.mesmoDia));
+  const ticket = vendas.filter((v) => v.valida && v.valor >= S.cfg.ticket).length;
+  const ganhos = blocos + encaixe + ticket;
+  const usados = S.premios.filter((x) => x.sdr === p.nome).length;
+  return { p, r, A, M, ag, aj, vendas, F, blocos, encaixe, ticket, ganhos, usados, roletasLivres: Math.max(0, ganhos - usados),
     pendentes: vendas.filter((v) => !v.valida && v.valor >= S.cfg.ticket) };
 }
 
@@ -432,57 +386,45 @@ function renderStatus() {
 
 /* ---------- placar ---------- */
 const ICON_WHEEL = `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 1.5v13M1.5 8h13M3.4 3.4l9.2 9.2M12.6 3.4l-9.2 9.2" stroke="currentColor" stroke-width="1"/></svg>`;
-const iconBalloon = (cor) => `<svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="6.5" rx="5" ry="6" fill="${cor}"/><path d="M8 12.5l-1 1.5h2z M8 14c0 1-1 1.5-1 2" fill="${cor}" stroke="${cor}" stroke-width=".8"/></svg>`;
-const ICON_BALLOON = iconBalloon("currentColor");
-
-function chip(texto, livres, total, icon) {
-  if (!total) return "";
-  const cls = livres > 0 ? "rw live" : "rw done";
-  return `<span class="${cls}">${icon}${esc(texto)} ${livres > 0 ? `· ${livres} a abrir` : "· aberto"}</span>`;
+function chip(c) {
+  if (!c.ganhos) return "";
+  return `<span class="rw ${c.roletasLivres ? "live" : "done"}">${ICON_WHEEL}${c.roletasLivres ? `${c.roletasLivres} giro${c.roletasLivres > 1 ? "s" : ""} a girar` : "Giros usados"}</span>`;
 }
 
 function renderPlacar() {
   const calc = participantes().map(calcular);
   const A = calc.reduce((s, c) => s + c.A, 0), metaA = calc.reduce((s, c) => s + c.r.bloco, 0);
   const F = calc.reduce((s, c) => s + c.F, 0), metaF = S.cfg.metaVendasTime;
-  const ganhos = calc.reduce((s, c) => s + c.ganhos.roleta + c.ganhos.encaixe + c.ganhos.vermelho + c.ganhos.dourado, 0);
+  const ganhos = calc.reduce((s, c) => s + c.ganhos, 0);
   const entregues = S.premios.filter((x) => x.entregue).length;
   $("#team").innerHTML = `
     <div class="kpi"><span class="eyebrow">Agendamentos do time</span><div class="v num">${A} <small>de ${metaA}</small></div><div class="bar"><i style="width:${Math.min(100, metaA ? A / metaA * 100 : 0)}%"></i></div></div>
     <div class="kpi"><span class="eyebrow">Vendas que contam</span><div class="v num">${brl(F)} <small>de ${brl(metaF)}</small></div><div class="bar gold"><i style="width:${Math.min(100, metaF ? F / metaF * 100 : 0)}%"></i></div></div>
-    <div class="kpi"><span class="eyebrow">Prêmios liberados</span><div class="v num">${ganhos} <small>${S.premios.length} aberto${S.premios.length === 1 ? "" : "s"} · ${entregues} entregue${entregues === 1 ? "" : "s"}</small></div><div class="bar ok"><i style="width:${ganhos ? Math.min(100, entregues / ganhos * 100) : 0}%"></i></div></div>`;
+    <div class="kpi"><span class="eyebrow">Giros liberados</span><div class="v num">${ganhos} <small>${S.premios.length} aberto${S.premios.length === 1 ? "" : "s"} · ${entregues} entregue${entregues === 1 ? "" : "s"}</small></div><div class="bar ok"><i style="width:${ganhos ? Math.min(100, entregues / ganhos * 100) : 0}%"></i></div></div>`;
 
   $("#people").innerHTML = calc.map((c) => {
     const resto = c.A % c.r.bloco, falta = c.r.bloco - resto;
     const doBloco = [...Array(c.r.bloco)].map((_, i) => `<i class="${i < resto ? "on" : ""}"></i>`).join("");
-    const proxV = c.F >= S.cfg.venda2 ? null : c.F >= S.cfg.venda1 ? S.cfg.venda2 : S.cfg.venda1;
     const ags = c.ag.map((a) => `<div class="it"><span class="num muted">${esc(a.hora)}</span><span>${esc(a.cliente)} <span class="muted">· ${esc(a.unidade)}</span></span><span class="tag ${a.mesmoDia ? "same" : ""}">${a.mesmoDia ? "hoje" : fmtDiaCurto(a.data)}</span></div>`).join("");
     const vds = c.vendas.map((v) => `<div class="it"><span class="tag ${v.valida ? "ok" : "warn"}">${Math.round(v.pctPago * 100)}%</span><span>${esc(v.cliente || "—")} <span class="muted">· ${v.fonte}</span></span><b class="num">${brl2(v.valor)}</b></div>`).join("");
     const ajs = c.aj.map((a) => `<div class="it"><span class="tag">manual</span><span>${a.tipo === "venda" ? `Venda ${brl2(a.valor)}` : `${a.qtd} agend. (${a.mesmoDia || 0} p/ hoje)`} <span class="muted">· ${esc(a.motivo)}</span></span><span></span></div>`).join("");
     const pode = !S.dias[S.dia]?.simulacao && S.canWrite;
     return `<article class="panel person">
       <header><div><h3>${esc(c.p.nome)}</h3><span class="role">${PAPEL[c.p.papel]}</span></div>
-        <div class="rewards">${chip("Roleta", c.livre("roleta"), c.ganhos.roleta, ICON_WHEEL)}</div></header>
+        <div class="rewards">${chip(c)}</div></header>
       <div class="big"><div><b class="num">${c.A}</b><span>agendamentos</span></div><div class="same"><b class="num">${c.M}</b><span>para hoje mesmo</span></div></div>
       <div style="display:grid;gap:6px">
         <div class="line"><span>Próxima roleta</span><span class="num muted">faltam ${falta} de ${c.r.bloco}</span></div>
         <div class="dots" aria-label="${resto} de ${c.r.bloco} agendamentos para a próxima roleta">${doBloco}</div>
-        <div class="line"><span>Balão do encaixe</span><span class="num muted">${Math.min(c.M - c.ganhos.encaixe * c.r.mesmoDia, c.r.mesmoDia)} de ${c.r.mesmoDia} para hoje mesmo</span></div>
+        <div class="line"><span>Giro extra do encaixe</span><span class="num muted">${Math.min(c.M - c.encaixe * c.r.mesmoDia, c.r.mesmoDia)} de ${c.r.mesmoDia} para hoje mesmo</span></div>
+        <div class="line muted"><span>Giros: ${c.blocos} por agendamentos · ${c.encaixe} por encaixe · ${c.ticket} por venda</span></div>
       </div>
       <div style="display:grid;gap:6px">
         <div class="line"><span>Vendas que contam</span><b class="num">${brl2(c.F)}</b></div>
-        <div class="bar gold"><i style="width:${Math.min(100, c.F / S.cfg.venda2 * 100)}%"></i></div>
-        <div class="line muted"><span>${proxV ? `Faltam ${brl(proxV - c.F)} para o ${proxV === S.cfg.venda1 ? "balão vermelho" : "balão dourado"}` : "Os dois balões de venda foram liberados"}</span></div>
+        <div class="line muted"><span>Cada venda de ${brl(S.cfg.ticket)} ou mais com ${S.cfg.pctPago}% pago vale um giro</span></div>
         ${c.pendentes.length ? `<div class="line"><span class="tag warn">${c.pendentes.length} venda${c.pendentes.length > 1 ? "s" : ""} acima de ${brl(S.cfg.ticket)} esperando ${S.cfg.pctPago}% pago</span></div>` : ""}
       </div>
-      <div class="rewards">
-        ${chip(BALAO.encaixe.nome, c.livre("encaixe"), c.ganhos.encaixe, ICON_BALLOON)}
-        ${chip(BALAO.vermelho.nome, c.livre("vermelho"), c.ganhos.vermelho, ICON_BALLOON)}
-        ${chip(BALAO.dourado.nome, c.livre("dourado"), c.ganhos.dourado, ICON_BALLOON)}
-      </div>
-      ${pode && (c.roletasLivres || c.baloesLivres) ? `<div class="actions">
-        ${c.roletasLivres ? `<button class="btn small" data-go="roleta" data-who="${esc(c.p.nome)}">Girar roleta (${c.roletasLivres})</button>` : ""}
-        ${c.baloesLivres ? `<button class="btn small ghost" data-go="baloes">Estourar balão (${c.baloesLivres})</button>` : ""}</div>` : ""}
+      ${pode && c.roletasLivres ? `<div class="actions"><button class="btn small" data-go="roleta" data-who="${esc(c.p.nome)}">Girar roleta (${c.roletasLivres})</button></div>` : ""}
       <details><summary>Ver agendamentos e vendas</summary>
         <div class="eyebrow" style="margin-top:10px">Agendamentos (${c.ag.length} do Belle)</div>
         <div class="list">${ags || `<div class="muted">Nenhum agendamento dela no Belle neste dia.</div>`}</div>
@@ -494,10 +436,9 @@ function renderPlacar() {
   }).join("") || `<div class="panel empty">Nenhuma participante ativa. Ative em Regras.</div>`;
 
   renderPrizeLog();
-  const totR = calc.reduce((s, c) => s + c.roletasLivres, 0), totB = calc.reduce((s, c) => s + c.baloesLivres, 0);
+  const totR = calc.reduce((s, c) => s + c.roletasLivres, 0);
   const sim = S.dias[S.dia]?.simulacao;
   $("#bRoleta").hidden = !totR || sim; $("#bRoleta").textContent = totR;
-  $("#bBaloes").hidden = !totB || sim; $("#bBaloes").textContent = totB;
 }
 
 async function nomes(ids) {
@@ -511,9 +452,8 @@ async function renderPrizeLog() {
   $("#prizeCount").textContent = rows.length ? `${rows.length} aberto${rows.length > 1 ? "s" : ""}` : "";
   if (!rows.length) { $("#prizeLog").innerHTML = `<div class="empty">Nenhum prêmio aberto neste dia.</div>`; return; }
   const ps = await nomes(rows.map((r) => r.por));
-  $("#prizeLog").innerHTML = `<table><thead><tr><th>Hora</th><th>Quem</th><th>Prêmio</th><th>Como ganhou</th><th>Aberto por</th><th>Entregue</th></tr></thead><tbody>${rows.map((r) => `
+  $("#prizeLog").innerHTML = `<table><thead><tr><th>Hora</th><th>Quem</th><th>Prêmio</th><th>Girado por</th><th>Entregue</th></tr></thead><tbody>${rows.map((r) => `
     <tr><td class="num">${r.em ? horaNatal(r.em) : ""}</td><td><b>${esc(r.sdr)}</b></td><td>${esc(r.premio)}</td>
-    <td class="muted">${r.tipo === "roleta" ? "Roleta" : esc(BALAO[r.origem]?.nome || "Balão")}</td>
     <td class="muted">${esc(ps[r.por]?.name || "")}</td>
     <td><label class="check"><input type="checkbox" data-entregue="${esc(r.id)}" ${r.entregue ? "checked" : ""} ${S.canWrite ? "" : "disabled"} aria-label="Entregue"></label></td></tr>`).join("")}</tbody></table>`;
 }
@@ -537,12 +477,12 @@ function desenharRoleta() {
 function renderRoleta() {
   const calc = participantes().map(calcular);
   if (!S.selRoleta || !calc.some((c) => c.p.nome === S.selRoleta)) S.selRoleta = (calc.find((c) => c.roletasLivres) || calc[0])?.p.nome || null;
-  $("#whoRoleta").innerHTML = calc.map((c) => `<button type="button" data-sel="${esc(c.p.nome)}" aria-pressed="${c.p.nome === S.selRoleta}"><b>${esc(c.p.nome)}</b><small>${c.roletasLivres ? `${c.roletasLivres} giro${c.roletasLivres > 1 ? "s" : ""} liberado${c.roletasLivres > 1 ? "s" : ""}` : `faltam ${c.r.bloco - (c.A % c.r.bloco)} agend.`}</small></button>`).join("");
+  $("#whoRoleta").innerHTML = calc.map((c) => `<button type="button" data-sel="${esc(c.p.nome)}" aria-pressed="${c.p.nome === S.selRoleta}"><b>${esc(c.p.nome)}</b><small>${c.roletasLivres ? `${c.roletasLivres} giro${c.roletasLivres > 1 ? "s" : ""} liberado${c.roletasLivres > 1 ? "s" : ""}` : `faltam ${c.r.bloco - (c.A % c.r.bloco)} agendamentos`}</small></button>`).join("");
   const sel = calc.find((c) => c.p.nome === S.selRoleta);
   const sim = S.dias[S.dia]?.simulacao;
   $("#spin").disabled = S.spinning || !sel || !sel.roletasLivres || sim || !S.canWrite;
   $("#roletaHint").textContent = sim ? "Dia de simulação: a roleta fica travada." :
-    `Gira a cada ${S.cfg.sdr.bloco} agendamentos (SDR) ou ${S.cfg.social.bloco} (Social Selling) e a cada venda de ${brl(S.cfg.ticket)} ou mais com ${S.cfg.pctPago}% pago.`;
+    `Gira a cada ${S.cfg.sdr.bloco} agendamentos (SDR) ou ${S.cfg.social.bloco} (Social Selling), de novo quando o bloco tem ${S.cfg.sdr.mesmoDia} (SDR) ou ${S.cfg.social.mesmoDia} (Social Selling) para hoje mesmo, e a cada venda de ${brl(S.cfg.ticket)} ou mais com ${S.cfg.pctPago}% pago.`;
 }
 
 async function travar(nome) {
@@ -576,43 +516,6 @@ async function girar() {
   } catch (e) {
     toast("Não foi possível registrar o giro. Confira a conexão e tente de novo.");
   } finally { S.spinning = false; renderRoleta(); }
-}
-
-/* ---------- balões ---------- */
-function svgBalao(cor) {
-  return `<svg viewBox="0 0 72 104" aria-hidden="true"><path d="M36 4C18 4 6 18 6 36c0 20 16 36 30 40 14-4 30-20 30-40C66 18 54 4 36 4z" fill="${cor}"/>
-    <ellipse cx="24" cy="24" rx="7" ry="11" fill="#fff" opacity=".28" transform="rotate(-20 24 24)"/>
-    <path d="M31 76h10l-5 6z" fill="${cor}"/><path d="M36 82c-4 6 4 10 0 20" fill="none" stroke="var(--ink-soft)" stroke-width="1.5"/></svg>`;
-}
-function renderBaloes() {
-  const calc = participantes().map(calcular);
-  const sim = S.dias[S.dia]?.simulacao;
-  $("#balloonRows").innerHTML = calc.map((c) => {
-    const abertos = S.premios.filter((x) => x.sdr === c.p.nome && x.tipo === "balao");
-    const fechados = [];
-    ["encaixe", "vermelho", "dourado"].forEach((k) => { for (let i = 0; i < c.livre(k); i++) fechados.push(k); });
-    const itens = fechados.map((k) => `<button class="balloon" type="button" data-pop="${esc(c.p.nome)}" data-kind="${k}" ${sim || !S.canWrite ? "disabled" : ""} aria-label="Estourar ${BALAO[k].nome} de ${esc(c.p.nome)}">${svgBalao(BALAO[k].cor)}<span>${BALAO[k].nome}</span></button>`).join("")
-      + abertos.map((x) => `<div class="opened"><small>${esc(BALAO[x.origem]?.nome || "Balão")}</small><b>${esc(x.premio)}</b></div>`).join("");
-    const como = [`${c.r.mesmoDia} dos ${c.r.bloco} agendamentos para hoje mesmo`, `${brl(S.cfg.venda1)} em vendas no dia`, `${brl(S.cfg.venda2)} em vendas no dia`];
-    return `<article class="panel person"><header><div><h3>${esc(c.p.nome)}</h3><span class="role">${PAPEL[c.p.papel]}</span></div></header>
-      <div class="balloons">${itens || `<p class="muted" style="margin:0;font-size:14px">Nenhum balão ainda. Balões saem com ${como.join(", ")}.</p>`}</div></article>`;
-  }).join("");
-}
-
-async function estourar(btn) {
-  const nome = btn.dataset.pop, kind = btn.dataset.kind, p = participantes().find((x) => x.nome === nome);
-  if (!p || !S.db || btn.disabled) return;
-  btn.disabled = true;
-  try {
-    if (!(await travar(nome))) { toast("Alguém já está abrindo um prêmio dela. Espere alguns segundos."); btn.disabled = false; return; }
-    const snap = await S.db.collection("premios").where("dia", "==", S.dia).get();
-    S.premios = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    if (!calcular(p).livre(kind)) { toast("Esse balão já foi estourado."); renderAll(); return; }
-    const { item } = sortear(S.cfg.baloes[kind]);
-    btn.classList.add("popped");
-    await S.db.collection("premios").add({ dia: S.dia, sdr: nome, tipo: "balao", origem: kind, premio: item.premio, por: S.myId, em: new Date().toISOString(), entregue: false });
-    toast(`${nome} ganhou: ${item.premio}`);
-  } catch { toast("Não foi possível registrar o balão. Tente de novo."); btn.disabled = false; }
 }
 
 /* ---------- lançamentos ---------- */
@@ -663,21 +566,15 @@ function renderRegras() {
   $("#rulesText").innerHTML = `
     <h3>Como funciona o Quintou</h3>
     <p>Toda quinta-feira o comercial trabalha focado em agendar e vender. O placar zera a cada quinta e conta só o que foi feito naquele dia.</p>
-    <h3>Roleta</h3>
+    <h3>Quando gira a roleta</h3>
     <ul>
-      <li>SDR: a cada <b>${c.sdr.bloco} agendamentos</b> feitos no dia, gira a roleta uma vez.</li>
-      <li>Social Selling: a cada <b>${c.social.bloco} agendamentos</b> feitos no dia, gira a roleta uma vez.</li>
-      <li>Cada venda de <b>${brl(c.ticket)} ou mais</b> também dá um giro.</li>
+      <li><b>Agendamentos:</b> a cada ${c.sdr.bloco} agendamentos feitos no dia (SDR) ou ${c.social.bloco} (Social Selling), um giro.</li>
+      <li><b>Encaixe no mesmo dia:</b> se pelo menos ${c.sdr.mesmoDia} desses ${c.sdr.bloco} (SDR) ou ${c.social.mesmoDia} dos ${c.social.bloco} (Social Selling) forem marcados para o próprio dia, mais um giro.</li>
+      <li><b>Venda de ticket alto:</b> cada venda de ${brl(c.ticket)} ou mais, mais um giro.</li>
       <li>Prêmios da roleta: ${nomesPremios(c.roleta)}.</li>
     </ul>
-    <h3>Balões</h3>
-    <ul>
-      <li><b>Balão do encaixe:</b> em cada bloco de ${c.sdr.bloco} agendamentos (SDR) ou ${c.social.bloco} (Social Selling), se pelo menos ${c.sdr.mesmoDia} (SDR) ou ${c.social.mesmoDia} (Social Selling) forem para o mesmo dia, estoura um balão. Prêmios: ${nomesPremios(c.baloes.encaixe)}.</li>
-      <li><b>Balão vermelho:</b> ${brl(c.venda1)} em vendas no dia. Prêmios: ${nomesPremios(c.baloes.vermelho)}.</li>
-      <li><b>Balão dourado:</b> ${brl(c.venda2)} em vendas no dia. Prêmios: ${nomesPremios(c.baloes.dourado)}. Quem chega aos ${brl(c.venda2)} estoura os dois balões de venda.</li>
-    </ul>
     <h3>Regra obrigatória das vendas</h3>
-    <p>Uma venda só conta para roleta e balões quando a cliente já pagou pelo menos <b>${c.pctPago}%</b> do valor. A venda que ainda não chegou lá aparece como “esperando ${c.pctPago}% pago” e passa a contar sozinha quando o pagamento entra no Belle.</p>
+    <p>Uma venda só dá giro quando a cliente já pagou pelo menos <b>${c.pctPago}%</b> do valor. A venda que ainda não chegou lá aparece como “esperando ${c.pctPago}% pago” e passa a contar sozinha quando o pagamento entra no Belle.</p>
     <h3>De onde vêm os números</h3>
     <ul>
       <li>Os agendamentos vêm do Belle: conta o que cada uma incluiu no dia, uma vez por cliente e data. Desmarcados e cancelados saem da conta. Avaliação e serviço avulso da mesma cliente no mesmo dia contam como um.</li>
@@ -689,8 +586,8 @@ function renderRegras() {
   if (!S.canEdit) return;
   const set = (id, v) => { const el = $(id); if (document.activeElement !== el) el.value = v; };
   set("#cSdrBloco", c.sdr.bloco); set("#cSdrMesmo", c.sdr.mesmoDia); set("#cSocBloco", c.social.bloco); set("#cSocMesmo", c.social.mesmoDia);
-  set("#cTicket", c.ticket); set("#cV1", c.venda1); set("#cV2", c.venda2); set("#cPct", c.pctPago); set("#cMetaTime", c.metaVendasTime);
-  set("#cRoleta", linhas(c.roleta)); set("#cBEnc", linhas(c.baloes.encaixe)); set("#cBVer", linhas(c.baloes.vermelho)); set("#cBDou", linhas(c.baloes.dourado));
+  set("#cTicket", c.ticket); set("#cPct", c.pctPago); set("#cMetaTime", c.metaVendasTime);
+  set("#cRoleta", linhas(c.roleta));
   if (!$("#cPart").contains(document.activeElement)) {
     $("#cPart").innerHTML = c.participantes.map((p, i) => `<div class="field"><label class="check"><input type="checkbox" data-pa="${i}" ${p.ativo ? "checked" : ""}> ${esc(p.nome)}</label>
       <select data-pp="${i}" aria-label="Função de ${esc(p.nome)}"><option value="sdr" ${p.papel === "sdr" ? "selected" : ""}>SDR</option><option value="social" ${p.papel === "social" ? "selected" : ""}>Social Selling</option></select></div>`).join("");
@@ -704,11 +601,10 @@ async function salvarCfg(ev) {
     participantes: S.cfg.participantes.map((p, i) => ({ nome: p.nome, ativo: $(`[data-pa="${i}"]`).checked, papel: $(`[data-pp="${i}"]`).value })),
     sdr: { bloco: Math.max(1, n("#cSdrBloco")), mesmoDia: Math.max(1, n("#cSdrMesmo")) },
     social: { bloco: Math.max(1, n("#cSocBloco")), mesmoDia: Math.max(1, n("#cSocMesmo")) },
-    ticket: n("#cTicket"), venda1: n("#cV1"), venda2: n("#cV2"), pctPago: Math.min(100, n("#cPct")), metaVendasTime: n("#cMetaTime"),
+    ticket: n("#cTicket"), pctPago: Math.min(100, n("#cPct")), metaVendasTime: n("#cMetaTime"),
     roleta: lerLinhas($("#cRoleta").value),
-    baloes: { encaixe: lerLinhas($("#cBEnc").value), vermelho: lerLinhas($("#cBVer").value), dourado: lerLinhas($("#cBDou").value) },
   };
-  if (!cfg.roleta.length || !cfg.baloes.encaixe.length || !cfg.baloes.vermelho.length || !cfg.baloes.dourado.length) { toast("Cada lista precisa de pelo menos um prêmio."); return; }
+  if (!cfg.roleta.length) { toast("A roleta precisa de pelo menos um prêmio."); return; }
   try { await S.db.doc("config/atual").set(cfg); toast("Metas e prêmios salvos."); }
   catch { toast("Não foi possível salvar. Só editoras do painel podem alterar as metas."); }
 }
@@ -726,7 +622,6 @@ function renderAll() {
   const aba = TABS.find((t) => !$(`#v-${t}`).hidden) || "placar";
   renderPlacar();
   if (aba === "roleta") renderRoleta();
-  if (aba === "baloes") renderBaloes();
   if (aba === "lancar") renderLancar();
   if (aba === "regras") renderRegras();
 }
@@ -746,7 +641,6 @@ document.addEventListener("click", (ev) => {
   const t = ev.target.closest("[data-tab]"); if (t) { abrirAba(t.dataset.tab); return; }
   const go = ev.target.closest("[data-go]"); if (go) { if (go.dataset.who) S.selRoleta = go.dataset.who; abrirAba(go.dataset.go); window.scrollTo({ top: 0 }); return; }
   const sel = ev.target.closest("[data-sel]"); if (sel) { S.selRoleta = sel.dataset.sel; $("#spinResult").hidden = true; renderRoleta(); return; }
-  const pop = ev.target.closest("[data-pop]"); if (pop) { estourar(pop); return; }
   const del = ev.target.closest("[data-del]"); if (del && S.db) { S.db.doc("ajustes/" + del.dataset.del).delete().then(() => toast("Lançamento excluído."), () => toast("Não foi possível excluir.")); return; }
 });
 document.addEventListener("change", (ev) => {
@@ -777,7 +671,7 @@ $("#cfgForm").addEventListener("submit", salvarCfg);
   S.db = db;
   db.doc("config/atual").onSnapshot((s) => {
     const c = s.exists ? s.data() : null;
-    S.cfg = c ? { ...DEFAULT_CFG, ...c, sdr: { ...DEFAULT_CFG.sdr, ...c.sdr }, social: { ...DEFAULT_CFG.social, ...c.social }, baloes: { ...DEFAULT_CFG.baloes, ...c.baloes } } : DEFAULT_CFG;
+    S.cfg = c ? { ...DEFAULT_CFG, ...c, sdr: { ...DEFAULT_CFG.sdr, ...c.sdr }, social: { ...DEFAULT_CFG.social, ...c.social } } : DEFAULT_CFG;
     desenharRoleta(); renderAll();
   }, () => {});
   db.collection("dias").onSnapshot((s) => {

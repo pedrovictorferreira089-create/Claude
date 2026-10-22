@@ -37,7 +37,6 @@ EQUIPE = {
     "Juliane Hemilly Salvador Rodrigues": "Juliane",
     "Bruna Letícia do Nascimento Silva": "Bruna",
     "Samilly Rohany Câmara Silva": "Samilly",
-    "Marina Batista Costa Pontes da Silva": "Marina",
 }
 FORA = ("desmarc", "cancel")
 FUSO = ZoneInfo("America/Fortaleza")
