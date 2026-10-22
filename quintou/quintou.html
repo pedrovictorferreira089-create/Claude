@@ -207,6 +207,11 @@ textarea { min-height: 120px; resize: vertical; font-size: 13px; }
       <div class="team" id="team"></div>
       <div class="people" id="people"></div>
       <div class="panel">
+        <h2>Vendas de ticket alto <span class="muted" id="ticketCount"></span></h2>
+        <p class="muted" style="margin:0 0 10px;font-size:13px" id="ticketHint"></p>
+        <div class="tablebox" id="ticketList"></div>
+      </div>
+      <div class="panel">
         <h2>Prêmios do dia <span class="muted" id="prizeCount"></span></h2>
         <div class="tablebox" id="prizeLog"></div>
       </div>
@@ -298,7 +303,7 @@ const WHEEL_COLORS = ["var(--wine)", "var(--salmon)", "var(--rose)", "var(--wine
 const TABS = ["placar", "roleta", "lancar", "regras"];
 
 const S = { db: null, user: null, myId: null, canWrite: true, canEdit: false, cfg: DEFAULT_CFG, dias: {}, dia: null,
-  premios: [], ajustes: [], unsubDay: [], selRoleta: null, spinning: false, rot: 0, profiles: {} };
+  premios: [], ajustes: [], conf: {}, unsubDay: [], selRoleta: null, spinning: false, rot: 0, profiles: {} };
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -338,11 +343,22 @@ function calcular(p) {
   const F = vendas.filter((v) => v.valida).reduce((s, v) => s + v.valor, 0);
   const blocos = Math.floor(A / r.bloco);
   const encaixe = Math.min(blocos, Math.floor(M / r.mesmoDia));
-  const ticket = vendas.filter((v) => v.valida && v.valor >= S.cfg.ticket).length;
+  const ticket = vendasTicket().filter((v) => v.valida && S.conf[v.key]?.sdr === p.nome).length;
   const ganhos = blocos + encaixe + ticket;
   const usados = S.premios.filter((x) => x.sdr === p.nome).length;
   return { p, r, A, M, ag, aj, vendas, F, blocos, encaixe, ticket, ganhos, usados, roletasLivres: Math.max(0, ganhos - usados),
-    pendentes: vendas.filter((v) => !v.valida && v.valor >= S.cfg.ticket) };
+    pendentes: vendas.filter((v) => !v.valida && v.valor >= S.cfg.ticket),
+    aConfirmar: vendasTicket().filter((v) => v.valida && !S.conf[v.key] && v.sugerida === p.nome).length };
+}
+
+/* Vendas do dia acima do ticket: o Belle não diz quem vendeu, então a líder confirma antes de liberar o giro. */
+function vendasTicket() {
+  const pct = (S.cfg.pctPago ?? 70) / 100, out = [];
+  Object.entries(S.dias[S.dia]?.equipe || {}).forEach(([nome, e]) => (e.vendas || []).forEach((v) =>
+    out.push({ key: "b-" + v.id, cliente: v.cliente, valor: v.valor, pctPago: v.pctPago, itens: v.itens, unidade: v.unidade, sugerida: nome, fonte: "Belle" })));
+  S.ajustes.filter((a) => a.tipo === "venda").forEach((a) =>
+    out.push({ key: "a-" + a.id, cliente: a.cliente || "", valor: a.valor || 0, pctPago: a.pago70 ? 1 : 0, sugerida: a.sdr, fonte: "Lançada" }));
+  return out.filter((v) => v.valor >= S.cfg.ticket).map((v) => ({ ...v, valida: v.pctPago + 1e-9 >= pct }));
 }
 
 /* ---------- topo ---------- */
@@ -422,6 +438,7 @@ function renderPlacar() {
       <div style="display:grid;gap:6px">
         <div class="line"><span>Vendas que contam</span><b class="num">${brl2(c.F)}</b></div>
         <div class="line muted"><span>Cada venda de ${brl(S.cfg.ticket)} ou mais com ${S.cfg.pctPago}% pago vale um giro</span></div>
+        ${c.aConfirmar ? `<div class="line"><span class="tag warn">${c.aConfirmar} venda${c.aConfirmar > 1 ? "s" : ""} acima de ${brl(S.cfg.ticket)} esperando a líder confirmar</span></div>` : ""}
         ${c.pendentes.length ? `<div class="line"><span class="tag warn">${c.pendentes.length} venda${c.pendentes.length > 1 ? "s" : ""} acima de ${brl(S.cfg.ticket)} esperando ${S.cfg.pctPago}% pago</span></div>` : ""}
       </div>
       ${pode && c.roletasLivres ? `<div class="actions"><button class="btn small" data-go="roleta" data-who="${esc(c.p.nome)}">Girar roleta (${c.roletasLivres})</button></div>` : ""}
@@ -436,6 +453,7 @@ function renderPlacar() {
   }).join("") || `<div class="panel empty">Nenhuma participante ativa. Ative em Regras.</div>`;
 
   renderPrizeLog();
+  renderTicket();
   const totR = calc.reduce((s, c) => s + c.roletasLivres, 0);
   const sim = S.dias[S.dia]?.simulacao;
   $("#bRoleta").hidden = !totR || sim; $("#bRoleta").textContent = totR;
@@ -445,6 +463,38 @@ async function nomes(ids) {
   ids = [...new Set(ids.filter(Boolean))];
   if (!S.user || !ids.length) return {};
   try { return await S.user.profiles(ids); } catch { return {}; }
+}
+
+function renderTicket() {
+  const vs = vendasTicket().sort((a, b) => b.valor - a.valor), sim = S.dias[S.dia]?.simulacao;
+  const pend = vs.filter((v) => v.valida && !S.conf[v.key]).length;
+  $("#ticketCount").textContent = pend ? `${pend} para confirmar` : "";
+  $("#ticketHint").textContent = `O Belle não registra qual SDR vendeu, só quem agendou a cliente. Cada venda de ${brl(S.cfg.ticket)} ou mais com ${S.cfg.pctPago}% pago só libera o giro depois que a líder confirma de quem foi.`
+    + (S.canEdit ? "" : " Só a líder (editora do painel) confirma.");
+  if (!vs.length) { $("#ticketList").innerHTML = `<div class="empty">Nenhuma venda de ${brl(S.cfg.ticket)} ou mais neste dia.</div>`; return; }
+  const ops = participantes().map((p) => p.nome);
+  $("#ticketList").innerHTML = `<table><thead><tr><th>Cliente</th><th>Valor</th><th>Pago</th><th>Quem agendou</th><th>Giro para</th></tr></thead><tbody>${vs.map((v) => {
+    const c = S.conf[v.key];
+    let giro;
+    if (!v.valida) giro = `<span class="tag warn">esperando ${S.cfg.pctPago}% pago</span>`;
+    else if (c && !S.canEdit) giro = c.sdr ? `<b>${esc(c.sdr)}</b>` : `<span class="muted">ninguém do comercial</span>`;
+    else if (S.canEdit && !sim) giro = `<span class="actions"><select data-conf-sel="${esc(v.key)}" aria-label="Quem vendeu">${ops.map((n) => `<option ${(c ? c.sdr : v.sugerida) === n ? "selected" : ""}>${esc(n)}</option>`).join("")}<option value="" ${(c && !c.sdr) || (!c && !ops.includes(v.sugerida)) ? "selected" : ""}>Ninguém do comercial</option></select>
+        <button class="btn small ${c ? "ghost" : ""}" data-conf="${esc(v.key)}">${c ? "Alterar" : "Confirmar"}</button></span>`;
+    else giro = `<span class="tag">aguardando a líder</span>`;
+    return `<tr><td>${esc(v.cliente || "—")} <span class="muted">· ${esc(v.fonte)}</span></td><td class="num"><b>${brl2(v.valor)}</b></td>
+      <td><span class="tag ${v.valida ? "ok" : "warn"}">${Math.round(v.pctPago * 100)}%</span></td><td>${esc(v.sugerida)}</td><td>${giro}</td></tr>`;
+  }).join("")}</tbody></table>`;
+}
+
+async function confirmarVenda(key) {
+  const sel = document.querySelector(`[data-conf-sel="${CSS.escape(key)}"]`);
+  if (!sel || !S.db) return;
+  const sdr = sel.value || null, atual = S.conf[key];
+  if (atual && atual.sdr !== sdr && S.premios.some((x) => x.sdr === atual.sdr) && calcular(participantes().find((p) => p.nome === atual.sdr) || { nome: atual.sdr, papel: "sdr" }).roletasLivres < 1) {
+    toast(`O giro dessa venda já foi usado por ${atual.sdr}. Ajuste o prêmio antes de trocar.`); return;
+  }
+  try { await S.db.doc("confirmacoes/" + key).set({ dia: S.dia, sdr, por: S.myId, em: new Date().toISOString() }); toast(sdr ? `Venda confirmada para ${sdr}.` : "Venda marcada como fora do comercial."); }
+  catch { toast("Só a líder (editora do painel) pode confirmar vendas."); }
 }
 
 async function renderPrizeLog() {
@@ -570,7 +620,7 @@ function renderRegras() {
     <ul>
       <li><b>Agendamentos:</b> a cada ${c.sdr.bloco} agendamentos feitos no dia (SDR) ou ${c.social.bloco} (Social Selling), um giro.</li>
       <li><b>Encaixe no mesmo dia:</b> se pelo menos ${c.sdr.mesmoDia} desses ${c.sdr.bloco} (SDR) ou ${c.social.mesmoDia} dos ${c.social.bloco} (Social Selling) forem marcados para o próprio dia, mais um giro.</li>
-      <li><b>Venda de ticket alto:</b> cada venda de ${brl(c.ticket)} ou mais, mais um giro.</li>
+      <li><b>Venda de ticket alto:</b> cada venda de ${brl(c.ticket)} ou mais, mais um giro, depois que a líder confirma quem vendeu.</li>
       <li>Prêmios da roleta: ${nomesPremios(c.roleta)}.</li>
     </ul>
     <h3>Regra obrigatória das vendas</h3>
@@ -579,7 +629,7 @@ function renderRegras() {
     <ul>
       <li>Os agendamentos vêm do Belle: conta o que cada uma incluiu no dia, uma vez por cliente e data. Desmarcados e cancelados saem da conta. Avaliação e serviço avulso da mesma cliente no mesmo dia contam como um.</li>
       <li>“Para hoje mesmo” é o agendamento feito na quinta para a própria quinta.</li>
-      <li>As vendas vêm do Belle e ficam com quem agendou a cliente. O percentual pago é calculado pelas parcelas confirmadas.</li>
+      <li>As vendas vêm do Belle, que não registra qual SDR vendeu. O painel sugere quem agendou a cliente e a líder confirma (ou troca) na lista de vendas de ticket alto do Placar. O percentual pago é calculado pelas parcelas confirmadas.</li>
       <li>O Belle é lido de hora em hora nas quintas, das 7h47 às 18h47. O horário da última leitura fica no topo da página.</li>
     </ul>`;
   $("#cfgPanel").hidden = !S.canEdit;
@@ -627,11 +677,12 @@ function renderAll() {
 }
 
 function trocarDia(d) {
-  S.dia = d; S.premios = []; S.ajustes = [];
+  S.dia = d; S.premios = []; S.ajustes = []; S.conf = {};
   $("#spinResult").hidden = true;
   S.unsubDay.forEach((u) => u()); S.unsubDay = [];
   if (S.db) {
     S.unsubDay.push(S.db.collection("premios").where("dia", "==", d).onSnapshot((s) => { S.premios = s.docs.map((x) => ({ id: x.id, ...x.data() })); renderAll(); }, () => {}));
+    S.unsubDay.push(S.db.collection("confirmacoes").where("dia", "==", d).onSnapshot((s) => { S.conf = {}; s.docs.forEach((x) => { S.conf[x.id] = x.data(); }); renderAll(); }, () => {}));
     S.unsubDay.push(S.db.collection("ajustes").where("dia", "==", d).onSnapshot((s) => { S.ajustes = s.docs.map((x) => ({ id: x.id, ...x.data() })); renderAll(); }, () => {}));
   }
   renderAll();
@@ -641,6 +692,7 @@ document.addEventListener("click", (ev) => {
   const t = ev.target.closest("[data-tab]"); if (t) { abrirAba(t.dataset.tab); return; }
   const go = ev.target.closest("[data-go]"); if (go) { if (go.dataset.who) S.selRoleta = go.dataset.who; abrirAba(go.dataset.go); window.scrollTo({ top: 0 }); return; }
   const sel = ev.target.closest("[data-sel]"); if (sel) { S.selRoleta = sel.dataset.sel; $("#spinResult").hidden = true; renderRoleta(); return; }
+  const cf = ev.target.closest("[data-conf]"); if (cf) { confirmarVenda(cf.dataset.conf); return; }
   const del = ev.target.closest("[data-del]"); if (del && S.db) { S.db.doc("ajustes/" + del.dataset.del).delete().then(() => toast("Lançamento excluído."), () => toast("Não foi possível excluir.")); return; }
 });
 document.addEventListener("change", (ev) => {
