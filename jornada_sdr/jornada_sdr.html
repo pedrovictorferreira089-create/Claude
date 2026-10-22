@@ -210,17 +210,31 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
         <div class="card">
           <span class="tag">Confirmação</span>
           <span class="who">Responsável: SDR (bloco das 17h30 para o dia seguinte e das 8h para o dia)</span>
-          <h3>Confirmar na véspera, acolher no dia</h3>
+          <h3>Ligar na véspera para confirmar</h3>
           <ul>
-            <li>Automático (cadência "Pré AV SDR 7853", 34,3% de resposta): confirmação 2h depois de agendar (33,3%) e lembrete curto 22h antes (47,3%). O vídeo da Aisi responde menos (21,3%).</li>
-            <li>Véspera: confirmar data, horário e endereço da unidade.</li>
-            <li>No dia, se ela já confirmou, não pedir "SIM" de novo: mandar uma mensagem de acolhimento oferecendo ajuda com a localização.</li>
+            <li>Automático (cadência "Pré AV SDR 7853", 34,3% de resposta): a confirmação 2h depois de agendar (33,3%) continua igual. O vídeo da Aisi responde menos (21,3%).</li>
+            <li>Véspera, no bloco das 17h30: em vez de mandar a mensagem de confirmação, a SDR <b>liga</b> para cada avaliação do dia seguinte. Confirma data, horário e unidade e tira na hora as dúvidas de como chegar. Depois da ligação, manda a localização pelo WhatsApp.</li>
+            <li>Não atendeu: enviar a confirmação e o endereço pelo WhatsApp.</li>
+            <li>No dia, se ela já confirmou, não pedir "SIM" de novo.</li>
           </ul>
-          <div class="scripts"><span class="chip">UTILIDADE PRE AV 1</span><span class="chip">UTILIDADE PRE AV 2</span><span class="chip">Confirmação Avaliação 1 Dia Antes</span><span class="chip">Confirmação novo</span><span class="chip">Endereço (da unidade)</span></div>
+          <div class="draft"><b>Roteiro da ligação de confirmação (1 minuto)</b>
+1. Abertura: "Oi, [nome]! Aqui é a [SDR], da Drenesse. Tudo bem? Te liguei rapidinho por causa da sua avaliação de amanhã."
+2. Confirmar: "Ficou para amanhã, [dia], às [hora], na unidade [unidade]. Continua tudo certo pra você?"
+3. Como chegar: "Você sabe chegar lá? Fica na [endereço], [ponto de referência]. Vou te mandar a localização aqui no WhatsApp."
+4. O que esperar: "A especialista vai olhar com calma o que te incomoda em [queixa] e, no mesmo horário, você já faz a [isca] pra sentir o resultado."
+5. Se precisar remarcar: "Sem problema! Tenho [horário 1] ou [horário 2]. Qual fica melhor pra você?" Remarcar durante a ligação.
+6. Fechamento: "Então está confirmado! Qualquer dúvida, é só me chamar aqui no WhatsApp. Até amanhã, [nome]!"</div>
+          <div class="scripts"><span class="chip">UTILIDADE PRE AV 1</span><span class="chip">UTILIDADE PRE AV 2</span></div>
+          <p class="note">Se não atender a ligação:</p>
+          <div class="scripts"><span class="chip">Confirmação Avaliação 1 Dia Antes</span><span class="chip">Confirmação novo</span><span class="chip">Endereço (da unidade)</span></div>
           <div class="data"><span>Comparecimento à avaliação em 2026: <b>55,5%</b>, perto da meta do POP (50%). Quase metade das avaliações não acontece.</span></div>
         </div>
         <div class="side">
-          <div class="branch warn"><strong>Faltou ou desmarcou</strong><span>Primeiro contato no mesmo dia, em tom de utilidade ("antes de reorganizar nossa agenda, você ainda deseja agendar?": 15,7%). O que não reagendar segue no bloco de Faltou AV de sexta-feira, com o presente (Spa Face + avaliação gratuita, hoje ou amanhã).</span><div class="scripts"><span class="chip">UTILIDADE FALTOU 1</span><span class="chip">Faltou AV cadência 1</span></div></div>
+          <div class="branch warn"><strong>Faltou ou desmarcou</strong><span>Primeiro contato no mesmo dia, acolhendo o imprevisto e segurando a condição especial até amanhã, com duas opções de horário. O que não reagendar segue no bloco de Faltou AV de sexta-feira, com o presente (Spa Face + avaliação gratuita, hoje ou amanhã).</span><div class="draft">Oii, [nome]! ❤️
+
+Sei que imprevistos acontecem, mas sua condição especial ainda tá aqui… só consigo segurar até *AMANHÃ* ⚠️
+
+Ainda faz sentido cuidar de você? Tenho horários pra hoje ou amanhã. Qual você prefere?</div><div class="scripts"><span class="chip">Falhou AV Imprevisto</span><span class="chip">Faltou AV cadência 1</span></div></div>
         </div>
       </div>
 
@@ -238,8 +252,8 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
           <div class="data"><span>Das clientes novas cuja primeira visita foi uma avaliação e que compram plano em até 12 meses, <b>71%</b> compram no próprio dia e <b>93%</b> até o 60º dia.</span></div>
         </div>
         <div class="side">
-          <div class="branch warn"><strong>Veio e não fechou</strong><span>A SDR envia o NPS comercial até 2h depois da visita (seção 2) e conduz a negociação pela resposta, junto com a Sênior quando o motivo é técnico. Sênior registra o motivo no Belle. Se a cliente não responder ao NPS, a SDR faz o contato em até 24h, reconhecendo a visita antes de perguntar ("que bom que você veio! o que faltou?": 22,3%), e segue no bloco de Negociação de segunda-feira. Nos toques seguintes, presente + reavaliação gratuita em vez de repetir a pergunta da objeção (7%). Depois de 60 dias a chance de compra fica muito baixa.</span><div class="scripts"><span class="chip">Cadência Negociação 10/09</span><span class="chip">Objeções Vou Pensar SDR</span></div></div>
-          <div class="branch ok"><strong>Comprou</strong><span>Mover o card para Convertidos no mesmo dia. É ele que alimenta o painel e a bonificação. Também recebe o NPS comercial, só para medir a experiência.</span></div>
+          <div class="branch warn"><strong>Veio e não fechou</strong><span>A SDR liga até 2h depois da visita (seção 2), descobre o motivo e resolve ela mesma, sem acionar as supervisoras. Se a cliente não atender, a SDR envia o NPS comercial pelo WhatsApp e age pela resposta. Sem resposta ao NPS, nova ligação no dia seguinte, reconhecendo a visita antes de perguntar ("que bom que você veio! o que faltou?": 22,3%), e a cliente segue no bloco de Negociação de segunda-feira. Nos toques seguintes, presente + reavaliação gratuita em vez de repetir a pergunta da objeção (7%). Depois de 60 dias a chance de compra fica muito baixa.</span><div class="scripts"><span class="chip">Cadência Negociação 10/09</span><span class="chip">Objeções Vou Pensar SDR</span></div></div>
+          <div class="branch ok"><strong>Comprou</strong><span>Mover o card para Convertidos no mesmo dia. É ele que alimenta o painel e a bonificação. Também recebe a ligação (ou o NPS, se não atender), só para medir a experiência e dar as boas-vindas.</span></div>
         </div>
       </div>
 
@@ -263,12 +277,12 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
         <div class="when">D+30<small>reavaliação 1</small></div>
         <div class="card key">
           <span class="tag">Reavaliação + cashback</span>
-          <span class="who">Responsáveis: recepção confirma · Supervisora Sênior reavalia · Supervisora Comercial entrega o cashback</span>
+          <span class="who">Responsáveis: recepção confirma · Supervisora Sênior reavalia e entrega o cashback</span>
           <h3>Mostrar a evolução e entregar o cashback</h3>
           <ul>
             <li>Fotos de antes e agora, medidas e aderência às sessões.</li>
             <li>A Sênior registra a dor que leva ao upgrade. Exemplos: gordura localizada (Crioturbo, Enzimas), definição, flacidez ou glúteo (Stimulus), flacidez facial (Criolifting), medidas e contorno (Lipo Gessada), diástase (Diástase Off), manchas e pele (Mellan Free, microagulhamento).</li>
-            <li>Entregar o cashback, válido até D+60 e só para um novo protocolo (regras na seção 5).</li>
+            <li>A Sênior entrega o cashback ali mesmo, já com a cliente na sala: válido até D+60 e só para um novo protocolo (regras na seção 5).</li>
           </ul>
           <div class="scripts"><span class="chip">Reavaliação</span><span class="chip">nova: Reavaliação 30 dias + cashback</span></div>
           <div class="data"><span>Quem faz o acompanhamento entre 14 e 60 dias depois da compra: <b>68%</b> compram de novo em até 90 dias. Quem não faz: <b>32%</b>.</span></div>
@@ -334,13 +348,21 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
   <!-- =============================== NPS =============================== -->
   <section aria-labelledby="t-nps">
     <div class="sec-head">
-      <span class="eyebrow">2 · NPS comercial</span>
-      <h2 id="t-nps">Pesquisa pós-avaliação enviada pela SDR</h2>
-      <p class="note">Objetivo: diminuir a dependência da Supervisora Sênior no pós-venda, sem tirá-la da negociação. A SDR descobre pelo NPS por que a cliente não fechou e resolve sozinha os motivos comerciais (pagamento, horário, decisão). A Sênior continua na negociação e concentra o tempo dela nos casos técnicos e nas clientes de maior potencial. Envio: até 2h depois da visita, pelo WhatsApp, para todas as clientes que vieram à avaliação. Respostas por número, para a cliente responder em segundos.</p>
+      <span class="eyebrow">2 · Ligação pós-avaliação e NPS comercial</span>
+      <h2 id="t-nps">A SDR liga para toda cliente que veio à avaliação</h2>
+      <p class="note">Objetivo: diminuir a dependência da Supervisora Sênior no pós-venda. A Sênior continua na negociação durante a visita; depois dela, o contato é só da SDR. Até 2h depois da visita, a SDR liga para todas as clientes que vieram à avaliação, fechando ou não, descobre por que a cliente não fechou e resolve ela mesma, sem acionar as supervisoras. Se a cliente não atender, a SDR envia o NPS comercial pelo WhatsApp, com respostas por número, e age pela resposta do mesmo jeito.</p>
     </div>
     <div class="two">
       <div class="panel">
-        <h3>Mensagem para enviar</h3>
+        <h3>Roteiro da ligação (2 minutos)</h3>
+        <div class="draft">1. Abertura: "Oi, [nome]! Aqui é a [SDR], da Drenesse. Você esteve com a gente hoje na avaliação, né? Tem 2 minutinhos? Quero saber como foi pra você."
+2. Nota: "De 0 a 10, o quanto você indicaria a avaliação da Drenesse para uma amiga?" Se der 0 a 6: "O que poderia ter sido melhor?"
+3. Plano: "O plano que a especialista te apresentou fez sentido para o que você busca?"
+4. Motivo: "E o que pesou para você não começar hoje?" Deixe ela falar; não leia opções.
+5. Intenção: "Se a gente resolvesse isso, você começaria nos próximos 7 dias?"
+6. Próximo passo: "Combinado! Vou [ação combinada] e te chamo aqui no WhatsApp. Obrigada, [nome]!"</div>
+        <p class="note">Para quem fechou: só a abertura, a nota, a pergunta do plano e um "bem-vinda".</p>
+        <h3>Se não atender: enviar o NPS comercial pelo WhatsApp</h3>
         <div class="draft">Oi, [nome]! Aqui é a [SDR], da Drenesse 💖 Obrigada por ter vindo hoje!
 Posso te fazer 4 perguntinhas rápidas? Leva menos de 1 minuto e me ajuda a cuidar melhor de você.
 
@@ -364,26 +386,26 @@ Posso te fazer 4 perguntinhas rápidas? Leva menos de 1 minuto e me ajuda a cuid
 3. Não
 
 ✍️ Quer me contar mais alguma coisa sobre o seu atendimento ou sobre o que você precisa para começar?</div>
-        <p class="note">Cadastrar como resposta rápida "NPS comercial" no Lever. Para quem fechou, a SDR pode cortar a pergunta 3 e a 4.</p>
+        <p class="note">Cadastrar como resposta rápida "NPS comercial" no Lever. Para quem fechou, a SDR pode cortar a pergunta 3 e a 4. Sem resposta ao NPS: nova ligação no dia seguinte.</p>
       </div>
       <div class="panel">
-        <h3>O que a SDR faz com cada resposta</h3>
+        <h3>O que a SDR fala e faz em cada motivo</h3>
         <div class="tbl">
           <table style="min-width:0">
-            <thead><tr><th>Resposta</th><th>Ação da SDR</th></tr></thead>
+            <thead><tr><th>Motivo (P3 no NPS)</th><th>O que a SDR fala e faz</th></tr></thead>
             <tbody>
-              <tr><td>P3 = 1 (valor ou pagamento)</td><td>Apresentar as formas de pagamento da política: entrada mínima, boleto até o dia 09, PIX ou cartão, e a condição de aquisição se ela tiver direito. Exceção só com a Head de Vendas.</td></tr>
-              <tr><td>P3 = 2 (quer pensar ou conversar com alguém)</td><td>Mandar um resumo da proposta e oferecer uma ligação com a pessoa que decide junto.</td></tr>
-              <tr><td>P3 = 3 (horários)</td><td>Oferecer horários de menor ocupação e montar a agenda das primeiras sessões.</td></tr>
-              <tr><td>P3 = 4 (dúvida se funciona)</td><td>Aciona a Supervisora Sênior: reavaliação técnica curta, presencial ou por vídeo. A Sênior também pode entrar em qualquer caso de potencial alto, a critério da Supervisora Comercial.</td></tr>
-              <tr><td>P2 = 2 ou 3 (o plano não encaixou)</td><td>Levar para a Supervisora Comercial rever a proposta (outro protocolo ou outra entrada).</td></tr>
-              <tr><td>P4 = 1 (começaria em 7 dias)</td><td>Prioridade máxima: fechar em até 48h.</td></tr>
-              <tr><td>P4 = 2 ou 3</td><td>Segue no bloco de Negociação de segunda-feira e na cadência.</td></tr>
-              <tr><td>P1 de 0 a 6 (detratora)</td><td>Avisar a Supervisora Comercial no mesmo dia: o problema pode estar no atendimento, não no preço.</td></tr>
+              <tr><td>Valor ou forma de pagamento</td><td>"Entendo! Dá para deixar mais leve: entrada menor, cartão ou boleto. Posso te mostrar a forma que cabe melhor?" Apresentar as formas de pagamento da política: entrada mínima, boleto até o dia 09, PIX ou cartão, e a condição de aquisição se ela tiver direito.</td></tr>
+              <tr><td>Quer pensar ou conversar com alguém</td><td>"Faz todo sentido. Te mando um resumo do plano para você mostrar? Se quiser, a gente conversa junto com essa pessoa." Mandar o resumo e marcar a conversa com quem decide junto.</td></tr>
+              <tr><td>Horários e rotina</td><td>"Vamos achar um horário que caiba na sua rotina. Prefere manhã, tarde ou noite?" Oferecer horários de menor ocupação e montar a agenda das primeiras sessões.</td></tr>
+              <tr><td>Dúvida se funciona</td><td>"Super entendo! Funciona sim para casos como o seu: [como o protocolo age na queixa dela]. Vou te mandar agora resultados de clientes com a mesma queixa." A SDR explica em uma frase e envia antes e depois de clientes com a mesma queixa.</td></tr>
+              <tr><td>O plano não encaixou (P2 = 2 ou 3)</td><td>"Obrigada por me dizer! O que não encaixou: o valor, a quantidade de sessões ou o procedimento? Dá pra montar uma opção que faça mais sentido pra você." A SDR monta outra opção dentro da tabela: outro protocolo, o Anual Método Drenesse como entrada ou outra forma de entrada.</td></tr>
+              <tr><td>Nota de 0 a 6 (P1)</td><td>"Sinto muito que não foi como você esperava. Me conta o que aconteceu? Quero resolver isso pra você." Ouvir, resolver o que der na hora e registrar o motivo no card; a gestão acompanha pelo painel.</td></tr>
+              <tr><td>Começaria em 7 dias (P4 = 1)</td><td>Prioridade máxima: fechar em até 48h.</td></tr>
+              <tr><td>Talvez ou não (P4 = 2 ou 3)</td><td>Segue no bloco de Negociação de segunda-feira e na cadência.</td></tr>
             </tbody>
           </table>
         </div>
-        <p class="note">Registrar no card do Lever a nota (P1), o motivo (P3) e a intenção (P4). Sugestão: criar os campos "NPS comercial" e "Motivo de não fechamento". Assim o painel mostra os motivos de perda por SDR, unidade e avaliadora.</p>
+        <p class="note">Formas de pagamento e entrada seguem o POP 06; exceção só com a Head de Vendas. Registrar no card do Lever a nota (P1), o motivo (P3) e a intenção (P4). Sugestão: criar os campos "NPS comercial" e "Motivo de não fechamento". Assim o painel mostra os motivos de perda por SDR, unidade e avaliadora.</p>
       </div>
     </div>
   </section>
@@ -456,9 +478,47 @@ Posso te fazer 4 perguntinhas rápidas? Leva menos de 1 minuto e me ajuda a cuid
         <h3>Reativação forte</h3>
         <ul>
           <li>Convite pessoal (vídeo da Aisi), presente e reavaliação.</li>
+          <li><b>Cartinha escrita à mão</b>, entregue em casa, com vale-presente (modelo abaixo).</li>
           <li>Condição de aquisição (R$ 3.290 PIX) só a partir de 6 meses sem vir e em campanha autorizada.</li>
         </ul>
         <div class="scripts"><span class="chip">video aisi inativos</span><span class="chip">[Reativação] Sem resposta dia 3 + reavaliação</span></div>
+      </div>
+    </div>
+    <div class="two">
+      <div class="panel">
+        <span class="eyebrow">90 dias ou mais · reativação forte</span>
+        <h3>Modelo da cartinha escrita à mão</h3>
+        <div class="draft">Querida [nome],
+
+Faz um tempinho que a gente não se vê, e eu quis te escrever com as minhas próprias mãos para dizer: sentimos sua falta por aqui.
+
+Lembro de você e de [um detalhe real: a queixa, o procedimento que fez ou algo que ela contou]. A rotina às vezes aperta, e tudo bem. O seu espaço de cuidado continua aqui, te esperando.
+
+Por isso, separei um presente só seu. É só me chamar no WhatsApp [número] que a gente escolhe juntas o melhor horário.
+
+Vai ser uma alegria te receber de novo!
+
+Com carinho,
+[nome da SDR] · Drenesse [unidade]</div>
+      </div>
+      <div class="panel">
+        <span class="eyebrow">Vai junto com a cartinha</span>
+        <h3>Vale-presente: Spa Face + reavaliação</h3>
+        <div class="draft">VALE-PRESENTE
+Spa Face + reavaliação, por nossa conta
+Para: [nome]
+Válido até: [data, 30 dias depois do envio]
+Código: [código]
+Agende pelo WhatsApp [número]</div>
+        <h3>Como fazer</h3>
+        <ul>
+          <li>Para quem: clientes nível A e B com 90 dias ou mais sem vir (planilha de reativação).</li>
+          <li>A SDR escreve à mão e cita um detalhe real da cliente. Sem o detalhe, a cartinha vira mala direta.</li>
+          <li>Endereço do cadastro no Belle, conferido antes do envio.</li>
+          <li>3 dias depois da entrega: "Oi, [nome]! Chegou minha cartinha? 💌"</li>
+          <li>Registrar no Lever a data do envio e o código do vale, para medir quantas cartinhas viram visita e venda.</li>
+          <li>Na reavaliação do vale, proposta de um procedimento de maior valor pela dor atual.</li>
+        </ul>
       </div>
     </div>
     <p class="note">Quem reagenda recebe a confirmação "Agendados / REATIV" (58,9% de resposta, a melhor do Lever) e, se faltar, "Falhou / REATIV" (31,8%). Ordem de prioridade: primeiro as clientes de maior gasto (nível A) com 30 a 89 dias sem vir, depois as de nível B, depois o nível A com 90 dias ou mais. A lista nominal de cada faixa está na planilha <b>Base_Reativacao_SDR.xlsx</b>, que fica só no computador da equipe porque tem dados pessoais.</p>
@@ -475,7 +535,7 @@ Posso te fazer 4 perguntinhas rápidas? Leva menos de 1 minuto e me ajuda a cuid
       <div class="panel">
         <h3>Regras propostas</h3>
         <ul>
-          <li><b>Quando:</b> entregue pessoalmente na reavaliação de D+30, junto com as fotos de evolução. Nunca antes da cliente comparecer.</li>
+          <li><b>Quando:</b> entregue pessoalmente pela Supervisora Sênior na reavaliação de D+30, junto com as fotos de evolução. Nunca antes da cliente comparecer.</li>
           <li><b>Validade:</b> até D+60. A 2ª compra sai em 33 dias (mediana) e 39% das clientes compram de novo até o 60º dia; depois disso a chance cai.</li>
           <li><b>Uso:</b> só em procedimento de upgrade (valor por sessão acima da drenagem; lista na etapa da 2ª compra). Não vale para drenagem, renovação do mesmo plano nem junto com a condição de aquisição.</li>
           <li><b>Valor sugerido:</b> 10% do primeiro plano, com teto de R$ 300. Assim o desconto é pago pela margem da 2ª compra, como pede a estratégia do anual.</li>
@@ -599,10 +659,11 @@ Posso deixar reservado o seu horário para começarmos o [protocolo]?</div>
         <thead><tr><th>Indicador</th><th>Como medir</th><th class="n">Referência atual</th></tr></thead>
         <tbody>
           <tr><td>Comparecimento à avaliação</td><td>Atendidas ÷ (atendidas + faltas)</td><td class="n">55,5%</td></tr>
+          <tr><td>Ligação de confirmação feita</td><td>Avaliações confirmadas por ligação ÷ avaliações agendadas</td><td class="n">a medir</td></tr>
           <tr><td>Fechamento no dia da avaliação</td><td>Avaliações atendidas com plano comprado no dia</td><td class="n">32,0%</td></tr>
           <tr><td>Reavaliação feita em até 60 dias</td><td>Clientes novas com acompanhamento entre D+14 e D+60</td><td class="n">28% (1.395 de 5.061)</td></tr>
           <tr><td>2ª compra em até 60 dias</td><td>Clientes novas com novo plano até D+60</td><td class="n">39%</td></tr>
-          <tr><td>NPS comercial</td><td>% de promotoras (9 e 10) menos % de detratoras (0 a 6), e taxa de resposta da pesquisa. Acompanhar também o motivo mais citado na P3</td><td class="n">a medir</td></tr>
+          <tr><td>NPS comercial</td><td>% de promotoras (9 e 10) menos % de detratoras (0 a 6), somando ligações e NPS por WhatsApp, e % de clientes que atenderam a ligação. Acompanhar também o motivo mais citado na P3</td><td class="n">a medir</td></tr>
           <tr><td>Resposta das cadências do Lever</td><td>Interações ÷ envios, comparando janela com janela a cada 15 dias</td><td class="n">9,1% (meta: nenhuma abaixo de 7%)</td></tr>
           <tr><td>Reativação de inativas</td><td>Inativas de 30 a 89 dias que voltaram em 60 dias</td><td class="n">14% a 24%</td></tr>
         </tbody>
