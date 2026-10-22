@@ -267,7 +267,7 @@ table.premios td:first-child input { min-width: 180px; }
     <section class="view" id="v-regras" hidden>
       <div class="panel"><div class="rules" id="rulesText"></div></div>
       <div class="panel" id="cfgPanel" hidden>
-        <h2>Metas e prêmios <span class="muted" style="font-weight:400;font-size:13px">só editoras do painel alteram</span></h2>
+        <h2>Metas e prêmios <span class="muted" style="font-weight:400;font-size:13px">só a dona do painel vê e altera</span></h2>
         <form id="cfgForm" class="form">
           <div class="field"><label for="cSdrBloco">SDR: agendamentos por roleta</label><input id="cSdrBloco" type="number" min="1"></div>
           <div class="field"><label for="cSdrMesmo">SDR: para hoje mesmo, por giro extra</label><input id="cSdrMesmo" type="number" min="1"></div>
@@ -277,7 +277,7 @@ table.premios td:first-child input { min-width: 180px; }
           <div class="field"><label for="cSocTicket">Social Selling: venda que gira a roleta (R$)</label><input id="cSocTicket" type="number" min="0" step="100"></div>
           <div class="field"><label for="cPct">Mínimo pago para a venda contar (%)</label><input id="cPct" type="number" min="0" max="100"></div>
           <div class="field"><label for="cMetaTime">Meta de vendas do time no dia (R$)</label><input id="cMetaTime" type="number" min="0" step="500"></div>
-          <div class="field full"><span class="lbl">Prêmios da roleta (a chance só aparece aqui, para editoras)</span>
+          <div class="field full"><span class="lbl">Prêmios da roleta (a chance só aparece aqui, para a dona do painel)</span>
             <div class="tablebox"><table class="premios"><thead><tr><th>Prêmio</th><th>Valor (R$)</th><th>Chance (%)</th><th></th></tr></thead><tbody id="cPremios"></tbody></table></div>
             <div class="actions" style="justify-content:space-between;align-items:center"><button class="btn small ghost" type="button" id="cAddPremio">Adicionar prêmio</button><span class="muted num" id="cSoma"></span></div></div>
           <div class="field full"><span class="lbl">Participantes</span><div id="cPart" class="form"></div></div>
@@ -308,7 +308,7 @@ const PAPEL = { sdr: "SDR", social: "Social Selling" };
 const WHEEL_COLORS = ["var(--wine)", "var(--salmon)", "var(--rose)", "var(--wine-deep)", "var(--gold)", "var(--red)"];
 const TABS = ["placar", "roleta", "lancar", "regras"];
 
-const S = { db: null, user: null, myId: null, canWrite: true, canEdit: false, cfg: DEFAULT_CFG, dias: {}, dia: null,
+const S = { db: null, user: null, myId: null, canWrite: true, canEdit: false, isOwner: false, cfg: DEFAULT_CFG, dias: {}, dia: null,
   premios: [], ajustes: [], conf: {}, unsubDay: [], selRoleta: null, spinning: false, rot: 0, profiles: {} };
 
 const $ = (s) => document.querySelector(s);
@@ -486,7 +486,7 @@ function renderTicket() {
   const pend = vs.filter((v) => v.valida && vendedora(v) === undefined).length;
   $("#ticketCount").textContent = pend ? `${pend} para confirmar` : "";
   $("#ticketHint").textContent = `Cada venda de ${brl(regra("sdr").ticket)} ou mais (SDR) ou ${brl(regra("social").ticket)} ou mais (Social Selling) com ${S.cfg.pctPago}% pago dá um giro para a responsável do card no Lever, casado com o Belle pelo telefone da cliente. Sem card no Lever, a líder confirma de quem foi.`
-    + (S.canEdit ? " Você pode corrigir qualquer uma." : " Só a líder (editora do painel) confirma ou corrige.");
+    + (S.canEdit ? " Você pode corrigir qualquer uma." : " Só a dona do painel confirma ou corrige.");
   const semBelle = (S.dias[S.dia]?.leverSemBelle || []).filter((c) => c.valor >= ticketDe(c.responsavel));
   const nota = semBelle.length ? `<p class="muted" style="margin:10px 0 0;font-size:13px">Convertidas no Lever sem venda no Belle ainda: ${semBelle.map((c) => `${esc(c.cliente)} ${brl(c.valor)} (${esc(c.responsavel)})`).join(", ")}. O giro sai quando a venda entrar no Belle.</p>` : "";
   if (!vs.length) { $("#ticketList").innerHTML = `<div class="empty">Nenhuma venda de ${brl(ticketMin())} ou mais neste dia.</div>` + nota; return; }
@@ -516,7 +516,7 @@ async function confirmarVenda(key) {
     toast(`O giro dessa venda já foi usado por ${antes}. Ajuste o prêmio antes de trocar.`); return;
   }
   try { await S.db.doc("confirmacoes/" + key).set({ dia: S.dia, sdr, por: S.myId, em: new Date().toISOString() }); toast(sdr ? `Venda confirmada para ${sdr}.` : "Venda marcada como fora do comercial."); }
-  catch { toast("Só a líder (editora do painel) pode confirmar vendas."); }
+  catch { toast("Só a dona do painel pode confirmar vendas."); }
 }
 
 async function renderPrizeLog() {
@@ -756,7 +756,8 @@ $("#cPremios").addEventListener("click", (ev) => { const b = ev.target.closest("
   S.user = user;
   if (user) {
     S.myId = await user.id();
-    S.canEdit = await user.canEdit();
+    S.isOwner = await user.isOwner();
+    S.canEdit = S.isOwner;
     const w = await user.can("data.write");
     S.canWrite = w !== false;
   }
