@@ -273,7 +273,8 @@ table.premios td:first-child input { min-width: 180px; }
           <div class="field"><label for="cSdrMesmo">SDR: para hoje mesmo, por giro extra</label><input id="cSdrMesmo" type="number" min="1"></div>
           <div class="field"><label for="cSocBloco">Social Selling: agendamentos por roleta</label><input id="cSocBloco" type="number" min="1"></div>
           <div class="field"><label for="cSocMesmo">Social Selling: para hoje mesmo, por giro extra</label><input id="cSocMesmo" type="number" min="1"></div>
-          <div class="field"><label for="cTicket">Venda que gira a roleta (R$)</label><input id="cTicket" type="number" min="0" step="100"></div>
+          <div class="field"><label for="cSdrTicket">SDR: venda que gira a roleta (R$)</label><input id="cSdrTicket" type="number" min="0" step="100"></div>
+          <div class="field"><label for="cSocTicket">Social Selling: venda que gira a roleta (R$)</label><input id="cSocTicket" type="number" min="0" step="100"></div>
           <div class="field"><label for="cPct">Mínimo pago para a venda contar (%)</label><input id="cPct" type="number" min="0" max="100"></div>
           <div class="field"><label for="cMetaTime">Meta de vendas do time no dia (R$)</label><input id="cMetaTime" type="number" min="0" step="500"></div>
           <div class="field full"><span class="lbl">Prêmios da roleta (a chance só aparece aqui, para editoras)</span>
@@ -295,8 +296,8 @@ const DEFAULT_CFG = {
     { nome: "Bruna", papel: "sdr", ativo: true },
     { nome: "Samilly", papel: "social", ativo: true },
   ],
-  sdr: { bloco: 8, mesmoDia: 4 },
-  social: { bloco: 6, mesmoDia: 3 },
+  sdr: { bloco: 8, mesmoDia: 4, ticket: 2800 },
+  social: { bloco: 6, mesmoDia: 3, ticket: 2100 },
   ticket: 2800, pctPago: 70, metaVendasTime: 25000,
   roleta: [
     { premio: "20 moedas Drene", valor: 200, peso: 10 }, { premio: "Vale iFood (5 moedas Drene)", valor: 50, peso: 22.5 },
@@ -331,7 +332,10 @@ function sortear(lista) {
 }
 
 /* ---------- cálculo do placar ---------- */
-function regra(papel) { return papel === "social" ? S.cfg.social : S.cfg.sdr; }
+function regra(papel) { const r = papel === "social" ? S.cfg.social : S.cfg.sdr; return { ...r, ticket: r.ticket ?? S.cfg.ticket ?? 2800 }; }
+/* Ticket que dá giro para cada pessoa: depende da função dela (SDR ou Social Selling). */
+function ticketDe(nome) { const p = S.cfg.participantes.find((x) => x.nome === nome); return regra(p?.papel || "sdr").ticket; }
+function ticketMin() { return Math.min(regra("sdr").ticket, regra("social").ticket); }
 function participantes() { return S.cfg.participantes.filter((p) => p.ativo); }
 
 function calcular(p) {
@@ -348,12 +352,12 @@ function calcular(p) {
   const F = vendas.filter((v) => v.valida).reduce((s, v) => s + v.valor, 0);
   const blocos = Math.floor(A / r.bloco);
   const encaixe = Math.min(blocos, Math.floor(M / r.mesmoDia));
-  const ticket = vendasTicket().filter((v) => v.valida && vendedora(v) === p.nome).length;
+  const ticket = vendasTicket().filter((v) => v.valida && vendedora(v) === p.nome && v.valor >= r.ticket).length;
   const ganhos = blocos + encaixe + ticket;
   const usados = S.premios.filter((x) => x.sdr === p.nome).length;
   return { p, r, A, M, ag, aj, vendas, F, blocos, encaixe, ticket, ganhos, usados, roletasLivres: Math.max(0, ganhos - usados),
-    pendentes: vendas.filter((v) => !v.valida && v.valor >= S.cfg.ticket),
-    aConfirmar: vendasTicket().filter((v) => v.valida && vendedora(v) === undefined && v.sugerida === p.nome).length };
+    pendentes: vendas.filter((v) => !v.valida && v.valor >= r.ticket),
+    aConfirmar: vendasTicket().filter((v) => v.valida && vendedora(v) === undefined && v.sugerida === p.nome && v.valor >= r.ticket).length };
 }
 
 /* Vendas do dia acima do ticket: o Belle não diz quem vendeu, então a líder confirma antes de liberar o giro. */
@@ -365,7 +369,7 @@ function vendasTicket() {
     out.push({ key: "b-" + v.id, cliente: v.cliente, valor: v.valor, pctPago: v.pctPago, itens: v.itens, unidade: v.unidade, agendou: nome, sugerida: nome, fonte: "Belle" })));
   S.ajustes.filter((a) => a.tipo === "venda").forEach((a) =>
     out.push({ key: "a-" + a.id, cliente: a.cliente || "", valor: a.valor || 0, pctPago: a.pago70 ? 1 : 0, sugerida: a.sdr, fonte: "Lançada" }));
-  return out.filter((v) => v.valor >= S.cfg.ticket).map((v) => ({ ...v, valida: v.pctPago + 1e-9 >= pct }));
+  return out.filter((v) => v.valor >= ticketMin()).map((v) => ({ ...v, valida: v.pctPago + 1e-9 >= pct }));
 }
 /* Quem fica com o giro: a decisão da líder, senão a responsável do card no Lever; undefined = falta confirmar. */
 function vendedora(v) {
@@ -449,9 +453,9 @@ function renderPlacar() {
       </div>
       <div style="display:grid;gap:6px">
         <div class="line"><span>Vendas que contam</span><b class="num">${brl2(c.F)}</b></div>
-        <div class="line muted"><span>Cada venda de ${brl(S.cfg.ticket)} ou mais com ${S.cfg.pctPago}% pago vale um giro</span></div>
-        ${c.aConfirmar ? `<div class="line"><span class="tag warn">${c.aConfirmar} venda${c.aConfirmar > 1 ? "s" : ""} acima de ${brl(S.cfg.ticket)} esperando a líder confirmar</span></div>` : ""}
-        ${c.pendentes.length ? `<div class="line"><span class="tag warn">${c.pendentes.length} venda${c.pendentes.length > 1 ? "s" : ""} acima de ${brl(S.cfg.ticket)} esperando ${S.cfg.pctPago}% pago</span></div>` : ""}
+        <div class="line muted"><span>Cada venda de ${brl(c.r.ticket)} ou mais com ${S.cfg.pctPago}% pago vale um giro</span></div>
+        ${c.aConfirmar ? `<div class="line"><span class="tag warn">${c.aConfirmar} venda${c.aConfirmar > 1 ? "s" : ""} acima de ${brl(c.r.ticket)} esperando a líder confirmar</span></div>` : ""}
+        ${c.pendentes.length ? `<div class="line"><span class="tag warn">${c.pendentes.length} venda${c.pendentes.length > 1 ? "s" : ""} acima de ${brl(c.r.ticket)} esperando ${S.cfg.pctPago}% pago</span></div>` : ""}
       </div>
       ${pode && c.roletasLivres ? `<div class="actions"><button class="btn small" data-go="roleta" data-who="${esc(c.p.nome)}">Girar roleta (${c.roletasLivres})</button></div>` : ""}
       <details><summary>Ver agendamentos e vendas</summary>
@@ -481,17 +485,19 @@ function renderTicket() {
   const vs = vendasTicket().sort((a, b) => b.valor - a.valor), sim = S.dias[S.dia]?.simulacao;
   const pend = vs.filter((v) => v.valida && vendedora(v) === undefined).length;
   $("#ticketCount").textContent = pend ? `${pend} para confirmar` : "";
-  $("#ticketHint").textContent = `Cada venda de ${brl(S.cfg.ticket)} ou mais com ${S.cfg.pctPago}% pago dá um giro para a responsável do card no Lever, casado com o Belle pelo telefone da cliente. Sem card no Lever, a líder confirma de quem foi.`
+  $("#ticketHint").textContent = `Cada venda de ${brl(regra("sdr").ticket)} ou mais (SDR) ou ${brl(regra("social").ticket)} ou mais (Social Selling) com ${S.cfg.pctPago}% pago dá um giro para a responsável do card no Lever, casado com o Belle pelo telefone da cliente. Sem card no Lever, a líder confirma de quem foi.`
     + (S.canEdit ? " Você pode corrigir qualquer uma." : " Só a líder (editora do painel) confirma ou corrige.");
-  const semBelle = (S.dias[S.dia]?.leverSemBelle || []).filter((c) => c.valor >= S.cfg.ticket);
+  const semBelle = (S.dias[S.dia]?.leverSemBelle || []).filter((c) => c.valor >= ticketDe(c.responsavel));
   const nota = semBelle.length ? `<p class="muted" style="margin:10px 0 0;font-size:13px">Convertidas no Lever sem venda no Belle ainda: ${semBelle.map((c) => `${esc(c.cliente)} ${brl(c.valor)} (${esc(c.responsavel)})`).join(", ")}. O giro sai quando a venda entrar no Belle.</p>` : "";
-  if (!vs.length) { $("#ticketList").innerHTML = `<div class="empty">Nenhuma venda de ${brl(S.cfg.ticket)} ou mais neste dia.</div>` + nota; return; }
+  if (!vs.length) { $("#ticketList").innerHTML = `<div class="empty">Nenhuma venda de ${brl(ticketMin())} ou mais neste dia.</div>` + nota; return; }
   const ops = participantes().map((p) => p.nome);
   $("#ticketList").innerHTML = `<table><thead><tr><th>Cliente</th><th>Valor</th><th>Pago</th><th>Origem</th><th>Giro para</th></tr></thead><tbody>${vs.map((v) => {
     const c = S.conf[v.key], quem = vendedora(v);
     const origem = v.lever ? `Lever ${esc(v.lever.key)}: <b>${esc(v.lever.responsavelLever || "sem responsável")}</b>` : v.agendou ? `agendou: ${esc(v.agendou)} <span class="tag warn">sem card no Lever</span>` : esc(v.fonte);
     let giro;
+    const alvo = quem !== undefined ? quem : v.sugerida;
     if (!v.valida) giro = `<span class="tag warn">esperando ${S.cfg.pctPago}% pago</span>`;
+    else if (alvo && v.valor < ticketDe(alvo) && !S.canEdit) giro = `<span class="muted">abaixo do ticket de ${esc(alvo)} (${brl(ticketDe(alvo))})</span>`;
     else if (S.canEdit && !sim) giro = `<span class="actions"><select data-conf-sel="${esc(v.key)}" aria-label="Quem vendeu">${ops.map((n) => `<option ${(quem !== undefined ? quem : v.sugerida) === n ? "selected" : ""}>${esc(n)}</option>`).join("")}<option value="" ${quem === null || (quem === undefined && !ops.includes(v.sugerida)) ? "selected" : ""}>Ninguém do comercial</option></select>
         <button class="btn small ${quem !== undefined ? "ghost" : ""}" data-conf="${esc(v.key)}">${quem !== undefined ? "Alterar" : "Confirmar"}</button>${!c && quem ? ` <span class="tag ok">pelo Lever</span>` : ""}</span>`;
     else if (quem !== undefined) giro = quem ? `<b>${esc(quem)}</b> ${c ? "" : `<span class="tag ok">pelo Lever</span>`}` : `<span class="muted">ninguém do comercial</span>`;
@@ -549,7 +555,7 @@ function renderRoleta() {
   const sim = S.dias[S.dia]?.simulacao;
   $("#spin").disabled = S.spinning || !sel || !sel.roletasLivres || sim || !S.canWrite;
   $("#roletaHint").textContent = sim ? "Dia de simulação: a roleta fica travada." :
-    `Gira a cada ${S.cfg.sdr.bloco} agendamentos (SDR) ou ${S.cfg.social.bloco} (Social Selling), de novo quando o bloco tem ${S.cfg.sdr.mesmoDia} (SDR) ou ${S.cfg.social.mesmoDia} (Social Selling) para hoje mesmo, e a cada venda de ${brl(S.cfg.ticket)} ou mais com ${S.cfg.pctPago}% pago.`;
+    `Gira a cada ${S.cfg.sdr.bloco} agendamentos (SDR) ou ${S.cfg.social.bloco} (Social Selling), de novo quando o bloco tem ${S.cfg.sdr.mesmoDia} (SDR) ou ${S.cfg.social.mesmoDia} (Social Selling) para hoje mesmo, e a cada venda de ${brl(regra("sdr").ticket)} (SDR) ou ${brl(regra("social").ticket)} (Social Selling) ou mais com ${S.cfg.pctPago}% pago.`;
 }
 
 async function travar(nome) {
@@ -651,7 +657,7 @@ function renderRegras() {
     <ul>
       <li><b>Agendamentos:</b> a cada ${c.sdr.bloco} agendamentos feitos no dia (SDR) ou ${c.social.bloco} (Social Selling), um giro.</li>
       <li><b>Encaixe no mesmo dia:</b> se pelo menos ${c.sdr.mesmoDia} desses ${c.sdr.bloco} (SDR) ou ${c.social.mesmoDia} dos ${c.social.bloco} (Social Selling) forem marcados para o próprio dia, mais um giro.</li>
-      <li><b>Venda de ticket alto:</b> cada venda de ${brl(c.ticket)} ou mais, mais um giro para quem é a responsável do card no Lever.</li>
+      <li><b>Venda de ticket alto:</b> cada venda de ${brl(regra("sdr").ticket)} ou mais (SDR) ou ${brl(regra("social").ticket)} ou mais (Social Selling), mais um giro para quem é a responsável do card no Lever.</li>
       <li>Prêmios da roleta: ${nomesPremios(c.roleta)}.</li>
     </ul>
     <h3>Regra obrigatória das vendas</h3>
@@ -667,7 +673,7 @@ function renderRegras() {
   if (!S.canEdit) return;
   const set = (id, v) => { const el = $(id); if (document.activeElement !== el) el.value = v; };
   set("#cSdrBloco", c.sdr.bloco); set("#cSdrMesmo", c.sdr.mesmoDia); set("#cSocBloco", c.social.bloco); set("#cSocMesmo", c.social.mesmoDia);
-  set("#cTicket", c.ticket); set("#cPct", c.pctPago); set("#cMetaTime", c.metaVendasTime);
+  set("#cSdrTicket", regra("sdr").ticket); set("#cSocTicket", regra("social").ticket); set("#cPct", c.pctPago); set("#cMetaTime", c.metaVendasTime);
   if (!$("#cPremios").contains(document.activeElement)) { $("#cPremios").innerHTML = c.roleta.map(linhaPremio).join(""); somaChances(); }
   if (!$("#cPart").contains(document.activeElement)) {
     $("#cPart").innerHTML = c.participantes.map((p, i) => `<div class="field"><label class="check"><input type="checkbox" data-pa="${i}" ${p.ativo ? "checked" : ""}> ${esc(p.nome)}</label>
@@ -680,9 +686,9 @@ async function salvarCfg(ev) {
   const n = (id) => Math.max(0, parseFloat($(id).value) || 0);
   const cfg = {
     participantes: S.cfg.participantes.map((p, i) => ({ nome: p.nome, ativo: $(`[data-pa="${i}"]`).checked, papel: $(`[data-pp="${i}"]`).value })),
-    sdr: { bloco: Math.max(1, n("#cSdrBloco")), mesmoDia: Math.max(1, n("#cSdrMesmo")) },
-    social: { bloco: Math.max(1, n("#cSocBloco")), mesmoDia: Math.max(1, n("#cSocMesmo")) },
-    ticket: n("#cTicket"), pctPago: Math.min(100, n("#cPct")), metaVendasTime: n("#cMetaTime"),
+    sdr: { bloco: Math.max(1, n("#cSdrBloco")), mesmoDia: Math.max(1, n("#cSdrMesmo")), ticket: n("#cSdrTicket") },
+    social: { bloco: Math.max(1, n("#cSocBloco")), mesmoDia: Math.max(1, n("#cSocMesmo")), ticket: n("#cSocTicket") },
+    pctPago: Math.min(100, n("#cPct")), metaVendasTime: n("#cMetaTime"),
     roleta: lerPremios(),
   };
   if (!cfg.roleta.length) { toast("A roleta precisa de pelo menos um prêmio."); return; }
