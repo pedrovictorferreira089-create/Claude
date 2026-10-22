@@ -103,7 +103,9 @@ def estimar_corte(ids):
 
 
 def corte_agora(hoje):
-    return max(a["idAgendamento"] for a in agenda(hoje - dt.timedelta(days=JANELA_ANTES), hoje + dt.timedelta(days=JANELA_DEPOIS)))
+    antes = agenda(hoje - dt.timedelta(days=JANELA_ANTES), hoje - dt.timedelta(days=1))
+    depois = agenda(hoje, hoje + dt.timedelta(days=JANELA_DEPOIS))
+    return max(a["idAgendamento"] for a in antes + depois)
 
 
 def montar(dia, corte=None, teto=None, hoje=None):
