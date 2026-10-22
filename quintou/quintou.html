@@ -587,7 +587,8 @@ async function girar() {
     $("#spinResult").innerHTML = `<span class="eyebrow">${esc(nome)} ganhou</span><b>${esc(item.premio)}</b>${item.valor ? `<span class="muted">vale ${brl(item.valor)}</span>` : ""}`;
     $("#spinResult").hidden = false;
   } catch (e) {
-    toast("Não foi possível registrar o giro. Confira a conexão e tente de novo.");
+    if (e?.code === "invalid_argument") { S.canWrite = false; renderAll(); toast("Sua conta só pode ver o painel. Peça para a dona te adicionar pelo e-mail como Editora para poder girar."); }
+    else toast("Não foi possível registrar o giro. Confira a conexão e tente de novo.");
   } finally { S.spinning = false; renderRoleta(); }
 }
 
