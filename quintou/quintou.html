@@ -161,6 +161,9 @@ td { padding: 8px; border-bottom: 1px solid var(--surface-2); vertical-align: mi
 .field.full { grid-column: 1 / -1; }
 .check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
 textarea { min-height: 120px; resize: vertical; font-size: 13px; }
+.form input[type=number], .form input[type=text], .form select { width: 100%; }
+table.premios input { width: 100%; min-width: 80px; }
+table.premios td:first-child input { min-width: 180px; }
 .rules { display: grid; gap: 12px; max-width: 70ch; }
 .rules h3 { font-size: 15px; font-weight: 600; color: var(--wine-deep); margin-top: 4px; }
 .rules ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
@@ -273,7 +276,9 @@ textarea { min-height: 120px; resize: vertical; font-size: 13px; }
           <div class="field"><label for="cTicket">Venda que gira a roleta (R$)</label><input id="cTicket" type="number" min="0" step="100"></div>
           <div class="field"><label for="cPct">Mínimo pago para a venda contar (%)</label><input id="cPct" type="number" min="0" max="100"></div>
           <div class="field"><label for="cMetaTime">Meta de vendas do time no dia (R$)</label><input id="cMetaTime" type="number" min="0" step="500"></div>
-          <div class="field full"><label for="cRoleta">Roleta: um prêmio por linha, com peso opcional depois de "|"</label><textarea id="cRoleta"></textarea></div>
+          <div class="field full"><span class="lbl">Prêmios da roleta (a chance só aparece aqui, para editoras)</span>
+            <div class="tablebox"><table class="premios"><thead><tr><th>Prêmio</th><th>Valor (R$)</th><th>Chance (%)</th><th></th></tr></thead><tbody id="cPremios"></tbody></table></div>
+            <div class="actions" style="justify-content:space-between;align-items:center"><button class="btn small ghost" type="button" id="cAddPremio">Adicionar prêmio</button><span class="muted num" id="cSoma"></span></div></div>
           <div class="field full"><span class="lbl">Participantes</span><div id="cPart" class="form"></div></div>
           <div class="field full"><button class="btn" type="submit">Salvar metas e prêmios</button></div>
         </form>
@@ -294,8 +299,8 @@ const DEFAULT_CFG = {
   social: { bloco: 6, mesmoDia: 3 },
   ticket: 2800, pctPago: 70, metaVendasTime: 25000,
   roleta: [
-    { premio: "20 moedas Drene", peso: 4 }, { premio: "Vale maquiagem", peso: 19 }, { premio: "2 moedas Drene", peso: 19 },
-    { premio: "R$ 10,00", peso: 19 }, { premio: "Chocolate", peso: 19 },
+    { premio: "20 moedas Drene", valor: 200, peso: 10 }, { premio: "Vale iFood (5 moedas Drene)", valor: 50, peso: 22.5 },
+    { premio: "2 moedas Drene", valor: 20, peso: 22.5 }, { premio: "R$ 10,00", valor: 10, peso: 22.5 }, { premio: "Chocolate", valor: null, peso: 22.5 },
   ],
 };
 const PAPEL = { sdr: "SDR", social: "Social Selling" };
@@ -510,11 +515,12 @@ async function confirmarVenda(key) {
 
 async function renderPrizeLog() {
   const rows = [...S.premios].sort((a, b) => (b.em || "").localeCompare(a.em || ""));
-  $("#prizeCount").textContent = rows.length ? `${rows.length} aberto${rows.length > 1 ? "s" : ""}` : "";
+  const total = rows.reduce((t, r) => t + (r.valor || 0), 0);
+  $("#prizeCount").textContent = rows.length ? `${rows.length} aberto${rows.length > 1 ? "s" : ""}${total ? ` · ${brl(total)}` : ""}` : "";
   if (!rows.length) { $("#prizeLog").innerHTML = `<div class="empty">Nenhum prêmio aberto neste dia.</div>`; return; }
   const ps = await nomes(rows.map((r) => r.por));
-  $("#prizeLog").innerHTML = `<table><thead><tr><th>Hora</th><th>Quem</th><th>Prêmio</th><th>Girado por</th><th>Entregue</th></tr></thead><tbody>${rows.map((r) => `
-    <tr><td class="num">${r.em ? horaNatal(r.em) : ""}</td><td><b>${esc(r.sdr)}</b></td><td>${esc(r.premio)}</td>
+  $("#prizeLog").innerHTML = `<table><thead><tr><th>Hora</th><th>Quem</th><th>Prêmio</th><th>Valor</th><th>Girado por</th><th>Entregue</th></tr></thead><tbody>${rows.map((r) => `
+    <tr><td class="num">${r.em ? horaNatal(r.em) : ""}</td><td><b>${esc(r.sdr)}</b></td><td>${esc(r.premio)}</td><td class="num">${r.valor ? brl(r.valor) : "—"}</td>
     <td class="muted">${esc(ps[r.por]?.name || "")}</td>
     <td><label class="check"><input type="checkbox" data-entregue="${esc(r.id)}" ${r.entregue ? "checked" : ""} ${S.canWrite ? "" : "disabled"} aria-label="Entregue"></label></td></tr>`).join("")}</tbody></table>`;
 }
@@ -565,14 +571,14 @@ async function girar() {
     if (!calcular(p).roletasLivres) { toast("Os giros dela já foram usados."); return; }
     const itens = S.cfg.roleta.filter((x) => x.premio);
     const { item, i } = sortear(itens);
-    await S.db.collection("premios").add({ dia: S.dia, sdr: nome, tipo: "roleta", origem: "roleta", premio: item.premio, por: S.myId, em: new Date().toISOString(), entregue: false });
+    await S.db.collection("premios").add({ dia: S.dia, sdr: nome, tipo: "roleta", origem: "roleta", premio: item.premio, valor: item.valor ?? null, por: S.myId, em: new Date().toISOString(), entregue: false });
     const a = 360 / itens.length, alvo = (360 - ((i + .5) * a + (Math.random() - .5) * a * .6)) % 360;
     S.rot = S.rot + 360 * 6 + ((alvo - (S.rot % 360)) + 360) % 360;
     $("#spinResult").hidden = true;
     $("#wheelRot").style.transform = `rotate(${S.rot}deg)`;
     const dur = matchMedia("(prefers-reduced-motion: reduce)").matches ? 50 : 5100;
     await new Promise((res) => setTimeout(res, dur));
-    $("#spinResult").innerHTML = `<span class="eyebrow">${esc(nome)} ganhou</span><b>${esc(item.premio)}</b>`;
+    $("#spinResult").innerHTML = `<span class="eyebrow">${esc(nome)} ganhou</span><b>${esc(item.premio)}</b>${item.valor ? `<span class="muted">vale ${brl(item.valor)}</span>` : ""}`;
     $("#spinResult").hidden = false;
   } catch (e) {
     toast("Não foi possível registrar o giro. Confira a conexão e tente de novo.");
@@ -618,9 +624,23 @@ async function salvarAjuste(ev) {
 }
 
 /* ---------- regras e configuração ---------- */
-const linhas = (lista) => (lista || []).map((x) => x.peso && x.peso !== 1 ? `${x.premio} | ${x.peso}` : x.premio).join("\n");
-const lerLinhas = (txt) => txt.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => { const [p, w] = l.split("|").map((s) => s.trim()); return { premio: p, peso: w ? Math.max(0, parseFloat(w.replace(",", ".")) || 0) : 1 }; }).filter((x) => x.premio);
-const nomesPremios = (lista) => (lista || []).map((x) => esc(x.premio)).join(", ") || "sem prêmios";
+const nomesPremios = (lista) => (lista || []).map((x) => esc(x.premio) + (x.valor ? ` (${brl(x.valor)})` : "")).join(", ") || "sem prêmios";
+const num = (v) => { const n = parseFloat(String(v ?? "").replace(",", ".")); return isFinite(n) ? n : null; };
+function linhaPremio(x) {
+  return `<tr><td><input type="text" data-pr="nome" value="${esc(x.premio || "")}" aria-label="Prêmio"></td>
+    <td><input type="number" data-pr="valor" min="0" step="1" value="${x.valor ?? ""}" aria-label="Valor em reais"></td>
+    <td><input type="number" data-pr="peso" min="0" step="0.5" value="${x.peso ?? ""}" aria-label="Chance em %"></td>
+    <td><button class="btn small ghost" type="button" data-pr-del aria-label="Remover prêmio">Remover</button></td></tr>`;
+}
+function lerPremios() {
+  return [...document.querySelectorAll("#cPremios tr")].map((tr) => ({
+    premio: tr.querySelector('[data-pr="nome"]').value.trim(), valor: num(tr.querySelector('[data-pr="valor"]').value),
+    peso: Math.max(0, num(tr.querySelector('[data-pr="peso"]').value) || 0) })).filter((x) => x.premio);
+}
+function somaChances() {
+  const t = lerPremios().reduce((a, x) => a + x.peso, 0);
+  $("#cSoma").textContent = `Soma das chances: ${t.toLocaleString("pt-BR")}%${Math.abs(t - 100) > .01 ? " (precisa dar 100%)" : ""}`;
+}
 
 function renderRegras() {
   const c = S.cfg;
@@ -648,7 +668,7 @@ function renderRegras() {
   const set = (id, v) => { const el = $(id); if (document.activeElement !== el) el.value = v; };
   set("#cSdrBloco", c.sdr.bloco); set("#cSdrMesmo", c.sdr.mesmoDia); set("#cSocBloco", c.social.bloco); set("#cSocMesmo", c.social.mesmoDia);
   set("#cTicket", c.ticket); set("#cPct", c.pctPago); set("#cMetaTime", c.metaVendasTime);
-  set("#cRoleta", linhas(c.roleta));
+  if (!$("#cPremios").contains(document.activeElement)) { $("#cPremios").innerHTML = c.roleta.map(linhaPremio).join(""); somaChances(); }
   if (!$("#cPart").contains(document.activeElement)) {
     $("#cPart").innerHTML = c.participantes.map((p, i) => `<div class="field"><label class="check"><input type="checkbox" data-pa="${i}" ${p.ativo ? "checked" : ""}> ${esc(p.nome)}</label>
       <select data-pp="${i}" aria-label="Função de ${esc(p.nome)}"><option value="sdr" ${p.papel === "sdr" ? "selected" : ""}>SDR</option><option value="social" ${p.papel === "social" ? "selected" : ""}>Social Selling</option></select></div>`).join("");
@@ -663,9 +683,10 @@ async function salvarCfg(ev) {
     sdr: { bloco: Math.max(1, n("#cSdrBloco")), mesmoDia: Math.max(1, n("#cSdrMesmo")) },
     social: { bloco: Math.max(1, n("#cSocBloco")), mesmoDia: Math.max(1, n("#cSocMesmo")) },
     ticket: n("#cTicket"), pctPago: Math.min(100, n("#cPct")), metaVendasTime: n("#cMetaTime"),
-    roleta: lerLinhas($("#cRoleta").value),
+    roleta: lerPremios(),
   };
   if (!cfg.roleta.length) { toast("A roleta precisa de pelo menos um prêmio."); return; }
+  if (Math.abs(cfg.roleta.reduce((a, x) => a + x.peso, 0) - 100) > .01) { toast("As chances dos prêmios precisam somar 100%."); return; }
   try { await S.db.doc("config/atual").set(cfg); toast("Metas e prêmios salvos."); }
   catch { toast("Não foi possível salvar. Só editoras do painel podem alterar as metas."); }
 }
@@ -715,6 +736,9 @@ $("#spin").addEventListener("click", girar);
 $("#aTipo").addEventListener("change", renderLancar);
 $("#adjForm").addEventListener("submit", salvarAjuste);
 $("#cfgForm").addEventListener("submit", salvarCfg);
+$("#cAddPremio").addEventListener("click", () => { $("#cPremios").insertAdjacentHTML("beforeend", linhaPremio({})); somaChances(); });
+$("#cPremios").addEventListener("input", somaChances);
+$("#cPremios").addEventListener("click", (ev) => { const b = ev.target.closest("[data-pr-del]"); if (b) { b.closest("tr").remove(); somaChances(); } });
 
 (async function iniciar() {
   S.tabId = Math.random().toString(36).slice(2);
