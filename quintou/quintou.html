@@ -343,22 +343,29 @@ function calcular(p) {
   const F = vendas.filter((v) => v.valida).reduce((s, v) => s + v.valor, 0);
   const blocos = Math.floor(A / r.bloco);
   const encaixe = Math.min(blocos, Math.floor(M / r.mesmoDia));
-  const ticket = vendasTicket().filter((v) => v.valida && S.conf[v.key]?.sdr === p.nome).length;
+  const ticket = vendasTicket().filter((v) => v.valida && vendedora(v) === p.nome).length;
   const ganhos = blocos + encaixe + ticket;
   const usados = S.premios.filter((x) => x.sdr === p.nome).length;
   return { p, r, A, M, ag, aj, vendas, F, blocos, encaixe, ticket, ganhos, usados, roletasLivres: Math.max(0, ganhos - usados),
     pendentes: vendas.filter((v) => !v.valida && v.valor >= S.cfg.ticket),
-    aConfirmar: vendasTicket().filter((v) => v.valida && !S.conf[v.key] && v.sugerida === p.nome).length };
+    aConfirmar: vendasTicket().filter((v) => v.valida && vendedora(v) === undefined && v.sugerida === p.nome).length };
 }
 
 /* Vendas do dia acima do ticket: o Belle não diz quem vendeu, então a líder confirma antes de liberar o giro. */
 function vendasTicket() {
-  const pct = (S.cfg.pctPago ?? 70) / 100, out = [];
-  Object.entries(S.dias[S.dia]?.equipe || {}).forEach(([nome, e]) => (e.vendas || []).forEach((v) =>
-    out.push({ key: "b-" + v.id, cliente: v.cliente, valor: v.valor, pctPago: v.pctPago, itens: v.itens, unidade: v.unidade, sugerida: nome, fonte: "Belle" })));
+  const pct = (S.cfg.pctPago ?? 70) / 100, out = [], dia = S.dias[S.dia];
+  if (dia?.vendas) dia.vendas.forEach((v) => out.push({ key: "b-" + v.id, cliente: v.cliente, valor: v.valor, pctPago: v.pctPago, itens: v.itens,
+    unidade: v.unidade, agendou: v.agendou, lever: v.lever, sugerida: v.lever?.responsavel || v.agendou, fonte: "Belle" }));
+  else Object.entries(dia?.equipe || {}).forEach(([nome, e]) => (e.vendas || []).forEach((v) =>
+    out.push({ key: "b-" + v.id, cliente: v.cliente, valor: v.valor, pctPago: v.pctPago, itens: v.itens, unidade: v.unidade, agendou: nome, sugerida: nome, fonte: "Belle" })));
   S.ajustes.filter((a) => a.tipo === "venda").forEach((a) =>
     out.push({ key: "a-" + a.id, cliente: a.cliente || "", valor: a.valor || 0, pctPago: a.pago70 ? 1 : 0, sugerida: a.sdr, fonte: "Lançada" }));
   return out.filter((v) => v.valor >= S.cfg.ticket).map((v) => ({ ...v, valida: v.pctPago + 1e-9 >= pct }));
+}
+/* Quem fica com o giro: a decisão da líder, senão a responsável do card no Lever; undefined = falta confirmar. */
+function vendedora(v) {
+  if (S.conf[v.key]) return S.conf[v.key].sdr;
+  return v.lever?.responsavel || undefined;
 }
 
 /* ---------- topo ---------- */
@@ -467,31 +474,35 @@ async function nomes(ids) {
 
 function renderTicket() {
   const vs = vendasTicket().sort((a, b) => b.valor - a.valor), sim = S.dias[S.dia]?.simulacao;
-  const pend = vs.filter((v) => v.valida && !S.conf[v.key]).length;
+  const pend = vs.filter((v) => v.valida && vendedora(v) === undefined).length;
   $("#ticketCount").textContent = pend ? `${pend} para confirmar` : "";
-  $("#ticketHint").textContent = `O Belle não registra qual SDR vendeu, só quem agendou a cliente. Cada venda de ${brl(S.cfg.ticket)} ou mais com ${S.cfg.pctPago}% pago só libera o giro depois que a líder confirma de quem foi.`
-    + (S.canEdit ? "" : " Só a líder (editora do painel) confirma.");
-  if (!vs.length) { $("#ticketList").innerHTML = `<div class="empty">Nenhuma venda de ${brl(S.cfg.ticket)} ou mais neste dia.</div>`; return; }
+  $("#ticketHint").textContent = `Cada venda de ${brl(S.cfg.ticket)} ou mais com ${S.cfg.pctPago}% pago dá um giro para a responsável do card no Lever, casado com o Belle pelo telefone da cliente. Sem card no Lever, a líder confirma de quem foi.`
+    + (S.canEdit ? " Você pode corrigir qualquer uma." : " Só a líder (editora do painel) confirma ou corrige.");
+  const semBelle = (S.dias[S.dia]?.leverSemBelle || []).filter((c) => c.valor >= S.cfg.ticket);
+  const nota = semBelle.length ? `<p class="muted" style="margin:10px 0 0;font-size:13px">Convertidas no Lever sem venda no Belle ainda: ${semBelle.map((c) => `${esc(c.cliente)} ${brl(c.valor)} (${esc(c.responsavel)})`).join(", ")}. O giro sai quando a venda entrar no Belle.</p>` : "";
+  if (!vs.length) { $("#ticketList").innerHTML = `<div class="empty">Nenhuma venda de ${brl(S.cfg.ticket)} ou mais neste dia.</div>` + nota; return; }
   const ops = participantes().map((p) => p.nome);
-  $("#ticketList").innerHTML = `<table><thead><tr><th>Cliente</th><th>Valor</th><th>Pago</th><th>Quem agendou</th><th>Giro para</th></tr></thead><tbody>${vs.map((v) => {
-    const c = S.conf[v.key];
+  $("#ticketList").innerHTML = `<table><thead><tr><th>Cliente</th><th>Valor</th><th>Pago</th><th>Origem</th><th>Giro para</th></tr></thead><tbody>${vs.map((v) => {
+    const c = S.conf[v.key], quem = vendedora(v);
+    const origem = v.lever ? `Lever ${esc(v.lever.key)}: <b>${esc(v.lever.responsavelLever || "sem responsável")}</b>` : v.agendou ? `agendou: ${esc(v.agendou)} <span class="tag warn">sem card no Lever</span>` : esc(v.fonte);
     let giro;
     if (!v.valida) giro = `<span class="tag warn">esperando ${S.cfg.pctPago}% pago</span>`;
-    else if (c && !S.canEdit) giro = c.sdr ? `<b>${esc(c.sdr)}</b>` : `<span class="muted">ninguém do comercial</span>`;
-    else if (S.canEdit && !sim) giro = `<span class="actions"><select data-conf-sel="${esc(v.key)}" aria-label="Quem vendeu">${ops.map((n) => `<option ${(c ? c.sdr : v.sugerida) === n ? "selected" : ""}>${esc(n)}</option>`).join("")}<option value="" ${(c && !c.sdr) || (!c && !ops.includes(v.sugerida)) ? "selected" : ""}>Ninguém do comercial</option></select>
-        <button class="btn small ${c ? "ghost" : ""}" data-conf="${esc(v.key)}">${c ? "Alterar" : "Confirmar"}</button></span>`;
+    else if (S.canEdit && !sim) giro = `<span class="actions"><select data-conf-sel="${esc(v.key)}" aria-label="Quem vendeu">${ops.map((n) => `<option ${(quem !== undefined ? quem : v.sugerida) === n ? "selected" : ""}>${esc(n)}</option>`).join("")}<option value="" ${quem === null || (quem === undefined && !ops.includes(v.sugerida)) ? "selected" : ""}>Ninguém do comercial</option></select>
+        <button class="btn small ${quem !== undefined ? "ghost" : ""}" data-conf="${esc(v.key)}">${quem !== undefined ? "Alterar" : "Confirmar"}</button>${!c && quem ? ` <span class="tag ok">pelo Lever</span>` : ""}</span>`;
+    else if (quem !== undefined) giro = quem ? `<b>${esc(quem)}</b> ${c ? "" : `<span class="tag ok">pelo Lever</span>`}` : `<span class="muted">ninguém do comercial</span>`;
     else giro = `<span class="tag">aguardando a líder</span>`;
-    return `<tr><td>${esc(v.cliente || "—")} <span class="muted">· ${esc(v.fonte)}</span></td><td class="num"><b>${brl2(v.valor)}</b></td>
-      <td><span class="tag ${v.valida ? "ok" : "warn"}">${Math.round(v.pctPago * 100)}%</span></td><td>${esc(v.sugerida)}</td><td>${giro}</td></tr>`;
-  }).join("")}</tbody></table>`;
+    return `<tr><td>${esc(v.cliente || "—")}</td><td class="num"><b>${brl2(v.valor)}</b></td>
+      <td><span class="tag ${v.valida ? "ok" : "warn"}">${Math.round(v.pctPago * 100)}%</span></td><td>${origem}</td><td>${giro}</td></tr>`;
+  }).join("")}</tbody></table>` + nota;
 }
 
 async function confirmarVenda(key) {
   const sel = document.querySelector(`[data-conf-sel="${CSS.escape(key)}"]`);
   if (!sel || !S.db) return;
-  const sdr = sel.value || null, atual = S.conf[key];
-  if (atual && atual.sdr !== sdr && S.premios.some((x) => x.sdr === atual.sdr) && calcular(participantes().find((p) => p.nome === atual.sdr) || { nome: atual.sdr, papel: "sdr" }).roletasLivres < 1) {
-    toast(`O giro dessa venda já foi usado por ${atual.sdr}. Ajuste o prêmio antes de trocar.`); return;
+  const sdr = sel.value || null, v = vendasTicket().find((x) => x.key === key), antes = v ? vendedora(v) : undefined;
+  const dona = antes && participantes().find((p) => p.nome === antes);
+  if (antes && antes !== sdr && dona && calcular(dona).roletasLivres < 1) {
+    toast(`O giro dessa venda já foi usado por ${antes}. Ajuste o prêmio antes de trocar.`); return;
   }
   try { await S.db.doc("confirmacoes/" + key).set({ dia: S.dia, sdr, por: S.myId, em: new Date().toISOString() }); toast(sdr ? `Venda confirmada para ${sdr}.` : "Venda marcada como fora do comercial."); }
   catch { toast("Só a líder (editora do painel) pode confirmar vendas."); }
@@ -620,7 +631,7 @@ function renderRegras() {
     <ul>
       <li><b>Agendamentos:</b> a cada ${c.sdr.bloco} agendamentos feitos no dia (SDR) ou ${c.social.bloco} (Social Selling), um giro.</li>
       <li><b>Encaixe no mesmo dia:</b> se pelo menos ${c.sdr.mesmoDia} desses ${c.sdr.bloco} (SDR) ou ${c.social.mesmoDia} dos ${c.social.bloco} (Social Selling) forem marcados para o próprio dia, mais um giro.</li>
-      <li><b>Venda de ticket alto:</b> cada venda de ${brl(c.ticket)} ou mais, mais um giro, depois que a líder confirma quem vendeu.</li>
+      <li><b>Venda de ticket alto:</b> cada venda de ${brl(c.ticket)} ou mais, mais um giro para quem é a responsável do card no Lever.</li>
       <li>Prêmios da roleta: ${nomesPremios(c.roleta)}.</li>
     </ul>
     <h3>Regra obrigatória das vendas</h3>
@@ -629,7 +640,7 @@ function renderRegras() {
     <ul>
       <li>Os agendamentos vêm do Belle: conta o que cada uma incluiu no dia, uma vez por cliente e data. Desmarcados e cancelados saem da conta. Avaliação e serviço avulso da mesma cliente no mesmo dia contam como um.</li>
       <li>“Para hoje mesmo” é o agendamento feito na quinta para a própria quinta.</li>
-      <li>As vendas vêm do Belle, que não registra qual SDR vendeu. O painel sugere quem agendou a cliente e a líder confirma (ou troca) na lista de vendas de ticket alto do Placar. O percentual pago é calculado pelas parcelas confirmadas.</li>
+      <li>As vendas vêm do Belle e quem vendeu vem do Lever: o card que entrou em Convertidos no dia é casado com a venda pelo telefone da cliente, e o giro vai para a responsável do card. Venda sem card no Lever fica sugerida para quem agendou a cliente e espera a líder confirmar. A líder pode corrigir qualquer uma na lista de vendas de ticket alto do Placar. O percentual pago é calculado pelas parcelas confirmadas no Belle.</li>
       <li>O Belle é lido de hora em hora nas quintas, das 7h47 às 18h47. O horário da última leitura fica no topo da página.</li>
     </ul>`;
   $("#cfgPanel").hidden = !S.canEdit;

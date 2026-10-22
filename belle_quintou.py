@@ -15,8 +15,10 @@ no dia tem id entre o último agendamento existente antes do expediente (corte) 
 rodada do dia. Sem eles, os dois são estimados pelo maior id dos agendamentos com data anterior (ou igual)
 ao dia, tolerando alguns lançamentos retroativos. A estimativa erra quando a recepção lança atendimentos
 passados durante o expediente, por isso o corte do dia deve ser medido antes de começar.
-Venda é atribuída à colaboradora que incluiu o agendamento da cliente naquele dia ou, se não houver,
-o agendamento mais recente dela no período consultado.
+Quem vendeu vem do Lever: cada card que entrou em Convertidos (ou Reativados com venda) no dia é casado
+com a venda do Belle pelo telefone da cliente, e a vendedora é a responsável do card. Sem card casado, a
+venda fica sugerida para quem agendou a cliente (o agendamento do próprio dia ou, se não houver, o mais
+recente dela no período consultado), para a líder confirmar no painel.
 """
 import argparse
 import datetime as dt
@@ -38,6 +40,13 @@ EQUIPE = {
     "Bruna Letícia do Nascimento Silva": "Bruna",
     "Samilly Rohany Câmara Silva": "Samilly",
 }
+# Primeiro nome do responsável no Lever -> nome no placar
+EQUIPE_LEVER = {"juliane": "Juliane", "julliane": "Juliane", "bruna": "Bruna", "samilly": "Samilly"}
+LEVER = "https://api.app.leverconversas.com.br/"
+LEVER_TOKEN = os.environ.get("LEVER_TOKEN", "")  # sem ele, o proxy do ambiente injeta a credencial
+PAINEIS = {"929d58b8-2650-4993-9deb-b7aaa6481b3b": "SDR", "8132810d-57ae-48e6-853e-eb3abcf13d2c": "Social Selling",
+           "7bea81d4-9a57-4556-8219-92df72d100e4": "Reativação"}
+FASES_VENDA = ("convertidos", "convertidos avulsos", "reativados com venda")
 FORA = ("desmarc", "cancel")
 FUSO = ZoneInfo("America/Fortaleza")
 JANELA_ANTES, JANELA_DEPOIS = 60, 92  # dias consultados antes e depois do dia (a API aceita até 3 meses)
@@ -62,6 +71,61 @@ def api(path, **q):
     if isinstance(data, dict) and ("erro" in data or "error" in data):
         raise RuntimeError(f"{path} {q}: {data}")
     return data
+
+
+def lever(path, **q):
+    headers = {"Authorization": f"Bearer {LEVER_TOKEN}"} if LEVER_TOKEN else {}
+    req = urllib.request.Request(LEVER + path + ("?" + urllib.parse.urlencode(q) if q else ""), headers=headers)
+    for tentativa in range(4):
+        try:
+            return json.loads(urllib.request.urlopen(req, timeout=120).read())
+        except urllib.error.HTTPError as e:
+            if tentativa == 3 or (400 <= e.code < 500 and e.code != 429):
+                raise
+        except Exception:
+            if tentativa == 3:
+                raise
+        time.sleep(10)
+
+
+def telefone(s):
+    """Últimos 8 dígitos: casam celulares com e sem o 9 extra, DDD e código do país."""
+    d = "".join(c for c in str(s or "") if c.isdigit())
+    return d[-8:] if len(d) >= 8 else None
+
+
+def cards_vendidos(dia):
+    """Cards que entraram numa fase de venda no dia (última movimentação no dia, horário de Natal)."""
+    nomes = {a["userId"]: a["name"] for a in lever("core/v1/agent", pageSize=100)}
+    out = []
+    for painel, funil in PAINEIS.items():
+        fases = [f for f in lever(f"crm/v1/panel/{painel}", includeDetails="Steps")["steps"] if f["title"].strip().lower() in FASES_VENDA]
+        for fase in fases:
+            pagina = 1
+            while True:
+                r = lever("crm/v1/panel/card", panelId=painel, stepId=fase["id"], pageNumber=pagina, pageSize=100,
+                          orderBy="updatedAt", orderDirection="DESCENDING")
+                passou = False
+                for c in r["items"]:
+                    quando = dt.datetime.fromisoformat(c["updatedAt"].replace("Z", "+00:00")).astimezone(FUSO).date()
+                    if quando < dia:
+                        passou = True
+                        break
+                    if quando == dia:
+                        resp = nomes.get(c.get("responsibleUserId"), "")
+                        out.append(dict(card=c["id"], key=c["key"], titulo=c["title"], funil=funil, fase=fase["title"].strip(),
+                                        valor=c.get("monetaryAmount") or 0, responsavelLever=resp,
+                                        responsavel=EQUIPE_LEVER.get((resp.split() or [""])[0].lower()),
+                                        contatos=c.get("contactIds") or []))
+                if passou or not r.get("hasMorePages"):
+                    break
+                pagina += 1
+    for c in out:
+        fones = {telefone(c["titulo"])}
+        for cid in c.pop("contatos"):
+            fones.add(telefone(lever(f"core/v1/contact/{cid}").get("phoneNumber")))
+        c["fones"] = sorted(f for f in fones if f)
+    return out
 
 
 def br(v):
@@ -154,12 +218,41 @@ def montar(dia, corte=None, teto=None, hoje=None):
             pago=round(pago, 2), pctPago=round(min(pago / valor, 1), 4), unidade=v["unidade"],
             itens=", ".join(sorted({i["desc_item"] for i in v.get("itens_venda") or []}))))
 
+    # todas as vendas do dia com dona sugerida (quem agendou) e, quando houver, o card do Lever casado pelo telefone
+    cards = cards_vendidos(dia)
+    por_fone = {}
+    for c in cards:
+        for f in c["fones"]:
+            por_fone.setdefault(f, []).append(c)
+    todas, casados = [], set()
+    for v in vendas:
+        valor = br(v["valor_venda"])
+        if valor <= 0:
+            continue
+        cli = v.get("dados_cliente") or {}
+        achados = {c["card"]: c for f in {telefone(cli.get(k)) for k in ("celular", "celular2", "telefone")} if f for c in por_fone.get(f, [])}
+        card = max(achados.values(), key=lambda c: (c["responsavel"] is not None, c["valor"]), default=None)
+        agendou = dono_cliente.get(str(v["cod_cliente"]))
+        if not agendou and not (card and card["responsavel"]):
+            continue
+        if card:
+            casados.add(card["card"])
+        pago = sum(br(p["valorBruto"]) for p in v.get("parcelas") or [] if p.get("confirmado") == "Sim")
+        todas.append(dict(
+            id=v["id_venda"], cliente=primeiro_nome(cli.get("nome")), valor=round(valor, 2), pago=round(pago, 2),
+            pctPago=round(min(pago / valor, 1), 4), unidade=v["unidade"], agendou=agendou,
+            itens=", ".join(sorted({i["desc_item"] for i in v.get("itens_venda") or []})),
+            lever=card and {k: card[k] for k in ("key", "funil", "fase", "valor", "responsavel", "responsavelLever")}))
+    sem_belle = [{k: c[k] for k in ("key", "funil", "fase", "valor", "responsavel", "responsavelLever")} | {"cliente": primeiro_nome(c["titulo"])}
+                 for c in cards if c["card"] not in casados and c["responsavel"]]
+
     for p in placar.values():
         p["agendamentos"].sort(key=lambda x: x["id"])
         p["vendas"].sort(key=lambda x: x["id"])
     return dict(dia=dia.isoformat(), atualizadoEm=dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
                 fonte="Belle", corteId=corte, corteEstimado=corte_estimado, tetoId=teto,
-                idMaximo=max((a["idAgendamento"] for a in antes + depois), default=0), equipe=placar)
+                idMaximo=max((a["idAgendamento"] for a in antes + depois), default=0), equipe=placar,
+                vendas=sorted(todas, key=lambda x: x["id"]), leverSemBelle=sem_belle)
 
 
 if __name__ == "__main__":
