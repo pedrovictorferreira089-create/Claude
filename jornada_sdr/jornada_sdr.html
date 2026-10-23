@@ -90,7 +90,7 @@ section { display: grid; gap: 20px; }
 .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
 .panel .big { font: 700 30px/1 var(--font-display); color: var(--brand); }
-.panel ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+.panel ul, .panel ol { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
 .tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
 table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px; }
 th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -128,9 +128,9 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
 
 <div class="wrap">
   <header>
-    <span class="eyebrow">Guia do time SDR · Método Drenesse</span>
+    <span class="eyebrow">Guia do time comercial · Método Drenesse</span>
     <h1>Jornada ideal de compra da cliente</h1>
-    <p class="lede">A drenagem Método Drenesse é a isca: ela traz a cliente e abre a avaliação. O lucro vem da compra seguinte, de um procedimento com valor acima da drenagem, principalmente Crioturbo, Stimulus e Lipo Gessada no corpo e microagulhamento, Criolifting e Mellan Free no rosto. Este é o caminho do primeiro contato até essa compra e a reativação, com prazos e recomendações tirados do histórico real da Drenesse no Belle, da estratégia do Método Drenesse Anual 2026-2027 e dos POPs comerciais e da recepção.</p>
+    <p class="lede">A drenagem Método Drenesse é a isca: ela traz a cliente e abre a avaliação. O lucro vem da compra seguinte, de um procedimento com valor acima da drenagem, principalmente Crioturbo, Stimulus e Lipo Gessada no corpo e microagulhamento, Criolifting e Mellan Free no rosto. Este é o caminho do primeiro contato até essa compra e a reativação, com o papel de cada pessoa do time: SDRs, recepção, Supervisora Sênior, Supervisora Comercial e esteticistas, com prazos e recomendações tirados do histórico real da Drenesse no Belle, da estratégia do Método Drenesse Anual 2026-2027 e dos POPs comerciais e da recepção.</p>
     <div class="facts">
       <span><b class="num">25.745</b> planos aprovados (2021–2026)</span>
       <span><b class="num">327 mil</b> agendamentos (2023–2026)</span>
@@ -145,6 +145,28 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
       <span class="eyebrow">1 · Fluxograma</span>
       <h2 id="t-fluxo">O caminho da cliente, etapa por etapa</h2>
       <p class="note">À esquerda, o prazo. No centro, o que fazer e as respostas rápidas do Lever para a etapa. À direita, o que fazer quando a cliente sai do caminho. Os nomes de funções, blocos e regras seguem os POPs da Drenesse.</p>
+    </div>
+
+    <div class="panel" style="margin-bottom:18px">
+      <h3>Quem faz o quê em cada etapa</h3>
+      <div class="tbl">
+        <table style="min-width:0">
+          <thead><tr><th>Etapa</th><th>Quem conduz</th><th>Quem apoia</th></tr></thead>
+          <tbody>
+              <tr><td>Primeiro contato, agendamento e confirmação</td><td><b>SDR</b></td><td>—</td></tr>
+              <tr><td>Chegada e questionário do Nutrium</td><td><b>Recepção</b></td><td>—</td></tr>
+              <tr><td>Avaliação e plano</td><td><b>Supervisora Sênior</b></td><td>—</td></tr>
+              <tr><td>Sessão na cabine (isca ou tratamento)</td><td><b>Esteticista</b></td><td>Supervisora Comercial, conversa de até 15 min</td></tr>
+              <tr><td>Sala de fechamento</td><td><b>Sênior ou Supervisora Comercial</b></td><td>Head de Vendas, nas exceções</td></tr>
+              <tr><td>Saída e boas-vindas</td><td><b>Recepção</b></td><td>Quem conduziu a sala acompanha a cliente até a saída</td></tr>
+              <tr><td>Ligação pós-avaliação</td><td><b>SDR</b></td><td>—</td></tr>
+              <tr><td>Reavaliação de 30 dias e cashback</td><td><b>Supervisora Sênior</b></td><td>Recepção confirma o horário</td></tr>
+              <tr><td>Upgrade, entre D+30 e D+60</td><td><b>Supervisora Comercial</b></td><td>Sênior e esteticista</td></tr>
+              <tr><td>Recorrência e renovação</td><td><b>Supervisora Sênior e Supervisora Comercial</b></td><td>—</td></tr>
+              <tr><td>Inativos e reativação</td><td><b>SDR</b></td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="flow">
@@ -180,7 +202,7 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
           <div class="data"><span>Valor em 12 meses de quem começa por Crioturbo <b>R$ 3.655</b></span><span>por Stimulus <b>R$ 3.564</b></span><span>por plano de drenagem <b>R$ 1.169</b></span><span>por facial <b>R$ 307</b> (medianas)</span></div>
         </div>
         <div class="side">
-          <div class="branch warn"><strong>Já é cliente</strong><span>Não é lead de aquisição: segue o fluxo de inativos (seção 4), com reavaliação sem custo.</span></div>
+          <div class="branch warn"><strong>Já é cliente</strong><span>Não é lead de aquisição: segue o fluxo de inativos (seção 5), com reavaliação sem custo.</span></div>
           <div class="branch warn"><strong>Sem interesse</strong><span>Mover para Não Leads, marcar o objetivo perdido e adicionar a etiqueta "Sem interesse".</span></div>
         </div>
       </div>
@@ -216,6 +238,7 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
             <li>Véspera, no bloco das 17h30: em vez de mandar a mensagem de confirmação, a SDR <b>liga</b> para cada avaliação do dia seguinte. Confirma data, horário e unidade e tira na hora as dúvidas de como chegar. Depois da ligação, manda a localização pelo WhatsApp.</li>
             <li>Não atendeu: enviar a confirmação e o endereço pelo WhatsApp.</li>
             <li>No dia, se ela já confirmou, não pedir "SIM" de novo.</li>
+            <li>Depois da ligação, deixar no card o resumo da <b>passagem de bastão</b> (seção 2): queixa principal nas palavras dela, potencial, isca agendada, o que já foi falado sobre valor e a objeção que apareceu.</li>
           </ul>
           <div class="draft"><b>Roteiro da ligação de confirmação (1 minuto)</b>
 1. Abertura: "Oi, [nome]! Aqui é a [SDR], da Drenesse. Tudo bem? Te liguei rapidinho por causa da sua avaliação de amanhã."
@@ -242,17 +265,18 @@ Ainda faz sentido cuidar de você? Tenho horários pra hoje ou amanhã. Qual voc
         <div class="when">Dia da visita</div>
         <div class="card key">
           <span class="tag">Avaliação + experiência</span>
-          <span class="who">Responsáveis: recepção (acolhimento e Nutrium) · Supervisora Sênior (avaliação e proposta) · Supervisora Comercial (apoio no fechamento)</span>
+          <span class="who">Responsáveis: recepção (chegada, Nutrium e saída) · Supervisora Sênior (avaliação e primeira oferta) · esteticista (sessão) · Sênior ou Supervisora Comercial (sala de fechamento)</span>
           <h3>Fechar no dia</h3>
           <ul>
-            <li>Avaliação: fotos com termo, objetivo e dores. Na experiência, a cliente sente o resultado.</li>
+            <li>Cinco momentos, com o passo a passo de cada pessoa na seção 2: chegada com o Nutrium, avaliação com a Sênior (que já faz a primeira oferta), sessão na cabine, sala de fechamento com a escada de negociação e saída com o plano ou a proposta impressa.</li>
             <li>Proposta pela dor, registrada no Belle. Gordura localizada, flacidez, glúteo ou contorno: oferecer direto um protocolo de maior valor, principalmente <b>Crioturbo, Stimulus ou Lipo Gessada</b>. Queixa de rosto (manchas, flacidez facial, textura): <b>microagulhamento, Criolifting ou Mellan Free</b>. Só inchaço/retenção, ou cliente que não fecha o protocolo maior: <b>Anual Método Drenesse</b> (R$ 3.590 no PIX / R$ 4.290 no cartão) como porta de entrada para o upgrade. Condição de aquisição (R$ 3.290 PIX / R$ 3.990 cartão) só para cliente nova ou inativa há 6 meses ou mais, em campanha autorizada.</li>
             <li>Entrada mínima (POP 06): cliente de primeira viagem, R$ 1.000 ou 50%; boleto com vencimento até o dia 09 do mês seguinte, checklist, declaração, áudio e grupo de WhatsApp.</li>
           </ul>
           <div class="data"><span>Das clientes novas cuja primeira visita foi uma avaliação e que compram plano em até 12 meses, <b>71%</b> compram no próprio dia e <b>93%</b> até o 60º dia.</span></div>
         </div>
         <div class="side">
-          <div class="branch warn"><strong>Veio e não fechou</strong><span>A SDR liga até 2h depois da visita (seção 2), descobre o motivo e resolve ela mesma, sem acionar as supervisoras. Se a cliente não atender, a SDR envia o NPS comercial pelo WhatsApp e age pela resposta. Sem resposta ao NPS, nova ligação no dia seguinte, reconhecendo a visita antes de perguntar ("que bom que você veio! o que faltou?": 22,3%), e a cliente segue no bloco de Negociação de segunda-feira. Nos toques seguintes, presente + reavaliação gratuita em vez de repetir a pergunta da objeção (7%). Depois de 60 dias a chance de compra fica muito baixa.</span><div class="scripts"><span class="chip">Cadência Negociação 10/09</span><span class="chip">Objeções Vou Pensar SDR</span></div></div>
+          <div class="branch warn"><strong>Veio só para a sessão</strong><span>Isca sem avaliação: a Supervisora Comercial aborda na cabine, em até 15 minutos, e fecha na sala pelo mesmo fluxo da Sênior (seção 2).</span></div>
+          <div class="branch warn"><strong>Veio e não fechou</strong><span>Quem conduziu a sala registra no card o plano, o valor e o motivo. A SDR liga até 2h depois da visita (seção 3), descobre o motivo e resolve ela mesma, sem acionar as supervisoras. Se a cliente não atender, a SDR envia o NPS comercial pelo WhatsApp e age pela resposta. Sem resposta ao NPS, nova ligação no dia seguinte, reconhecendo a visita antes de perguntar ("que bom que você veio! o que faltou?": 22,3%), e a cliente segue no bloco de Negociação de segunda-feira. Nos toques seguintes, presente + reavaliação gratuita em vez de repetir a pergunta da objeção (7%). Depois de 60 dias a chance de compra fica muito baixa.</span><div class="scripts"><span class="chip">Cadência Negociação 10/09</span><span class="chip">Objeções Vou Pensar SDR</span></div></div>
           <div class="branch ok"><strong>Comprou</strong><span>Mover o card para Convertidos no mesmo dia. É ele que alimenta o painel e a bonificação. Também recebe a ligação (ou o NPS, se não atender), só para medir a experiência e dar as boas-vindas.</span></div>
         </div>
       </div>
@@ -282,7 +306,7 @@ Ainda faz sentido cuidar de você? Tenho horários pra hoje ou amanhã. Qual voc
           <ul>
             <li>Fotos de antes e agora, medidas e aderência às sessões.</li>
             <li>A Sênior registra a dor que leva ao upgrade. Exemplos: gordura localizada (Crioturbo, Enzimas), definição, flacidez ou glúteo (Stimulus), flacidez facial (Criolifting), medidas e contorno (Lipo Gessada), diástase (Diástase Off), manchas e pele (Mellan Free, microagulhamento).</li>
-            <li>A Sênior entrega o cashback ali mesmo, já com a cliente na sala: válido até D+60 e só para um novo protocolo (regras na seção 5).</li>
+            <li>A Sênior entrega o cashback ali mesmo, já com a cliente na sala: válido até D+60 e só para um novo protocolo (regras na seção 6).</li>
           </ul>
           <div class="scripts"><span class="chip">Reavaliação</span><span class="chip">nova: Reavaliação 30 dias + cashback</span></div>
           <div class="data"><span>Quem faz o acompanhamento entre 14 e 60 dias depois da compra: <b>68%</b> compram de novo em até 90 dias. Quem não faz: <b>32%</b>.</span></div>
@@ -296,12 +320,12 @@ Ainda faz sentido cuidar de você? Tenho horários pra hoje ou amanhã. Qual voc
         <div class="when">D+45 a D+60<small>janela crítica</small></div>
         <div class="card key">
           <span class="tag">2ª compra</span>
-          <span class="who">Responsáveis: Supervisora Comercial identifica · Supervisora Sênior oferta · esteticista conduz na cabine</span>
+          <span class="who">Responsáveis: Supervisora Comercial identifica e aborda na cabine · Sênior ou Comercial fecha na sala · esteticista conduz a sessão</span>
           <h3>Converter a cliente de drenagem para um procedimento de maior valor antes do D+60</h3>
           <ul>
             <li>Na organização diária da base (POP 06), separar as clientes de drenagem entre D+30 e D+60 e montar o plano de upgrade de cada uma.</li>
             <li>Upgrade é qualquer procedimento com valor por sessão acima da drenagem (R$ 78 por sessão, já com descontos). Os principais são os de maior valor por venda: no corpo, Crioturbo, Stimulus e Lipo Gessada; no rosto, microagulhamento, Criolifting e Mellan Free. Mais drenagem não é a 2ª compra: ela já cumpriu o papel de isca.</li>
-            <li>Oferecer o procedimento ligado à dor registrada na reavaliação, usando o cashback. Upgrades mais comuns de quem começou na drenagem: Crioturbo (16%), Lipo Gessada (14%), faciais de tratamento (8%), Stimulus (8%), Enzimas (6%) e Pós-Crioturbo (5%).</li>
+            <li>Durante a sessão, a Supervisora Comercial aborda a cliente na cabine (roteiro na seção 2) e a conversa de valores acontece na sala. Oferecer o procedimento ligado à dor registrada na reavaliação, usando o cashback. Upgrades mais comuns de quem começou na drenagem: Crioturbo (16%), Lipo Gessada (14%), faciais de tratamento (8%), Stimulus (8%), Enzimas (6%) e Pós-Crioturbo (5%).</li>
           </ul>
           <div class="data"><span>De quem começou com plano de drenagem, <b>32%</b> fazem upgrade em até 12 meses e <b>22%</b> até o 60º dia (mediana de <b>28 dias</b>)</span><span>Valor em 12 meses de quem fez o upgrade: <b>R$ 3.588</b>, contra <b>R$ 750</b> de quem ficou só na drenagem (medianas)</span></div>
           <div class="tbl" style="margin-top:4px">
@@ -345,10 +369,138 @@ Ainda faz sentido cuidar de você? Tenho horários pra hoje ou amanhã. Qual voc
     </div>
   </section>
 
+  <!-- =============================== NA UNIDADE =============================== -->
+  <section aria-labelledby="t-unidade">
+    <div class="sec-head">
+      <span class="eyebrow">2 · Na unidade</span>
+      <h2 id="t-unidade">Recepção, Supervisora Sênior e Supervisora Comercial</h2>
+      <p class="note">71% das vendas de clientes novas saem no próprio dia da avaliação. A visita tem cinco momentos e dois caminhos, e o fechamento acontece sempre na sala, nunca na cabine.</p>
+    </div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Momento</th><th>Quem</th><th>O que acontece</th></tr></thead>
+        <tbody>
+          <tr><td>1 · Chegada</td><td>Recepção</td><td>Acolhe a cliente e aplica o questionário do Nutrium antes de a Sênior chamar.</td></tr>
+          <tr><td>2 · Avaliação</td><td>Supervisora Sênior</td><td>Diagnóstico, plano de ação e primeira oferta.</td></tr>
+          <tr><td>3 · Cabine</td><td>Esteticista e Supervisora Comercial</td><td>Sessão da isca ou do tratamento; a Supervisora Comercial conversa por até 15 minutos.</td></tr>
+          <tr><td>4 · Sala</td><td>Sênior ou Supervisora Comercial</td><td>Fechamento com a escada de negociação.</td></tr>
+          <tr><td>5 · Saída</td><td>Recepção</td><td>Plano ou proposta impressa, agenda montada e aviso à SDR.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="two">
+      <div class="panel">
+        <span class="eyebrow">Caminho A</span>
+        <h3>Avaliação + isca</h3>
+        <p>A Sênior já oferta na avaliação. Se a cliente não fechar ali, ela faz a isca e a conversa continua na sala depois da sessão, com a Sênior ou com a Supervisora Comercial.</p>
+      </div>
+      <div class="panel">
+        <span class="eyebrow">Caminho B</span>
+        <h3>Só a sessão</h3>
+        <p>Cliente que veio só para a isca, ou cliente em tratamento entre D+30 e D+60: pula a avaliação. A Supervisora Comercial aborda na cabine e fecha na sala. Para quem está em tratamento, a conversa é o upgrade.</p>
+      </div>
+    </div>
+
+    <div class="two">
+      <div class="panel">
+        <span class="eyebrow">Recepção</span>
+        <h3>Na chegada</h3>
+        <ul>
+          <li>Acolher a cliente pelo nome.</li>
+          <li>Aplicar o questionário do Nutrium antes de a Sênior chamar: motivação, expectativas, objetivos e histórico.</li>
+          <li>Se o Nutrium permitir, mandar o questionário junto com a ligação de confirmação, para ela chegar com tudo preenchido.</li>
+          <li>Avisar quem vai atender que a cliente chegou: a Sênior (avaliação) ou a Supervisora Comercial (sessão).</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <span class="eyebrow">Recepção</span>
+        <h3>Na saída</h3>
+        <ul>
+          <li><b>Fechou:</b> imprimir o plano e seguir o checklist do POP 06 (declaração, áudio e grupo); agendar na hora as primeiras sessões, nutricionista, bioimpedância e reavaliação de 30 dias; onboarding pelo número oficial; avisar a SDR para mover o card para Convertidos.</li>
+          <li><b>Não fechou:</b> imprimir a proposta para ela levar e avisar a SDR para a ligação de até 2h.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="two">
+      <div class="panel">
+        <span class="eyebrow">Supervisora Sênior</span>
+        <h3>Preparação: plano pronto antes de chamar a cliente (5 min)</h3>
+        <ul>
+          <li>Ler o Nutrium e o resumo da SDR no card.</li>
+          <li>Montar o plano de ação com duas opções: o protocolo principal pela dor e uma entrada (Anual Método Drenesse).</li>
+          <li>Abrir no computador as fotos de resultado da mesma queixa e o material técnico do protocolo.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <span class="eyebrow">Supervisora Sênior</span>
+        <h3>Roteiro da avaliação</h3>
+        <ol>
+          <li><b>Abertura:</b> conduzir até a sala. "Oi, [nome]! Eu sou a [nome], especialista da Drenesse. Vi que você quer cuidar de [motivação do Nutrium]. Me conta mais?"</li>
+          <li><b>Escuta:</b> deixar ela contar a dor com as palavras dela e anotar.</li>
+          <li><b>Fotos:</b> fotos com termo e avaliação.</li>
+          <li><b>Diagnóstico:</b> ligar a dor ao serviço com o material técnico. "No seu caso, o [protocolo] age justamente em [dor]."</li>
+          <li><b>Prova:</b> resultados de clientes com a mesma queixa.</li>
+          <li><b>Proposta:</b> o protocolo principal primeiro, com margem para negociar pela escada; a entrada como 2ª opção.</li>
+          <li><b>Fechamento:</b> fechou, a recepção imprime o plano. Não fechou: se tem isca, a conversa continua na sala depois da sessão. Registrar para a SDR e acompanhar a cliente até a saída.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="two">
+      <div class="panel">
+        <span class="eyebrow">Supervisora Comercial</span>
+        <h3>Quando entra e o que faz antes da cabine</h3>
+        <ul>
+          <li><b>Quando:</b> clientes que vêm só para a sessão (isca sem avaliação) e clientes em tratamento entre D+30 e D+60, para o upgrade. Também pode conduzir a sala no caminho A.</li>
+          <li>Ler o resumo da SDR no card: perfil, queixa principal e potencial. Cliente em tratamento: ler a dor que a Sênior registrou na reavaliação de 30 dias.</li>
+          <li>Alinhar com a esteticista o que destacar durante a sessão.</li>
+          <li>Valores do plano só na sala.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <span class="eyebrow">Supervisora Comercial</span>
+        <h3>Na cabine, até 15 minutos</h3>
+        <ol>
+          <li><b>Apresentação:</b> "Oi, [nome]! Eu sou a [nome], supervisora da unidade. Vim te conhecer!"</li>
+          <li><b>Escuta:</b> a cliente se apresenta e conta a queixa com as palavras dela.</li>
+          <li><b>Resultados:</b> fotos que comprovam o que está faltando para ela.</li>
+          <li><b>Condição do dia:</b> "A unidade hoje está com 40% de desconto."</li>
+          <li><b>Convite:</b> "No final da sua sessão, eu te chamo na minha sala pra gente conversar melhor, combinado?"</li>
+        </ol>
+        <p class="note">Depois da sessão, na sala: o mesmo fluxo da Sênior (plano, prova, proposta e escada); a recepção imprime e ela acompanha a cliente até a saída.</p>
+      </div>
+    </div>
+
+    <div class="two">
+      <div class="panel">
+        <span class="eyebrow">Sala de fechamento · Sênior e Supervisora Comercial</span>
+        <h3>A mesma escada de negociação para todas</h3>
+        <ol>
+          <li><b>Valor de tabela:</b> o protocolo principal pela dor, com margem para negociar.</li>
+          <li><b>Condição para fechar hoje:</b> a mesma condição do dia falada na cabine.</li>
+          <li><b>Entrada e pagamento:</b> entrada, cartão ou boleto dentro do POP 06.</li>
+          <li><b>Outra porta de entrada:</b> protocolo menor ou Anual Método Drenesse.</li>
+        </ol>
+        <p class="note">Piso: nunca abaixo da política do POP 06; exceção só com a Head de Vendas. Registrar no card em que degrau a venda fechou: isso mostra quanto desconto cada unidade está dando.</p>
+      </div>
+      <div class="panel">
+        <span class="eyebrow">Passagem de bastão · no card da cliente no Lever</span>
+        <h3>Ninguém começa a conversa do zero</h3>
+        <ul>
+          <li><b>SDR → unidade, na véspera</b> (depois da ligação de confirmação): queixa principal nas palavras dela, potencial de venda, isca agendada, o que já foi falado sobre valor e a objeção que apareceu. Quem lê: a Sênior e a Supervisora Comercial, antes de a cliente chegar.</li>
+          <li><b>Unidade → SDR, na saída</b>: quem conduziu a sala registra o plano ofertado, o valor e a condição, se fechou ou o motivo de não fechar e o próximo passo combinado. Quem lê: a SDR, antes da ligação de até 2h.</li>
+        </ul>
+        <div class="draft">Exemplo de resumo da SDR:
+Queixa: barriga e culote, "a calça não fecha mais" · Potencial: alto · Isca: drenagem · Valor: perguntou o preço, falei que os protocolos começam em R$ 300 · Objeção: pouco tempo</div>
+      </div>
+    </div>
+  </section>
+
   <!-- =============================== NPS =============================== -->
   <section aria-labelledby="t-nps">
     <div class="sec-head">
-      <span class="eyebrow">2 · Ligação pós-avaliação e NPS comercial</span>
+      <span class="eyebrow">3 · Ligação pós-avaliação e NPS comercial</span>
       <h2 id="t-nps">A SDR liga para toda cliente que veio à avaliação</h2>
       <p class="note">Objetivo: diminuir a dependência da Supervisora Sênior no pós-venda. A Sênior continua na negociação durante a visita; depois dela, o contato é só da SDR. Até 2h depois da visita, a SDR liga para todas as clientes que vieram à avaliação, fechando ou não, descobre por que a cliente não fechou e resolve ela mesma, sem acionar as supervisoras. Se a cliente não atender, a SDR envia o NPS comercial pelo WhatsApp, com respostas por número, e age pela resposta do mesmo jeito.</p>
     </div>
@@ -413,7 +565,7 @@ Posso te fazer 4 perguntinhas rápidas? Leva menos de 1 minuto e me ajuda a cuid
   <!-- =============================== ISCAS =============================== -->
   <section aria-labelledby="t-iscas">
     <div class="sec-head">
-      <span class="eyebrow">3 · Iscas</span>
+      <span class="eyebrow">4 · Iscas</span>
       <h2 id="t-iscas">Qual procedimento usar como porta de entrada</h2>
       <p class="note">Primeira visita de clientes novas (sem plano anterior) de jul/2023 a out/2025, pela agenda do Belle. "Fecha no dia" é a compra de plano no dia da primeira visita.</p>
     </div>
@@ -443,7 +595,7 @@ Posso te fazer 4 perguntinhas rápidas? Leva menos de 1 minuto e me ajuda a cuid
   <!-- =============================== INATIVOS =============================== -->
   <section aria-labelledby="t-inativos">
     <div class="sec-head">
-      <span class="eyebrow">4 · Inativos</span>
+      <span class="eyebrow">5 · Inativos</span>
       <h2 id="t-inativos">Como trabalhar cada faixa de inatividade</h2>
       <p class="note">Inativa = cliente de plano que não tem sessão atendida há 30 dias ou mais (a mesma régua de 1 mês do POP 02). Trabalhadas pela SDR no bloco das 14h às 17h30 e no disparo de quinta-feira, que deve ser separado por faixa. Os percentuais mostram o que aconteceu nos 60 dias seguintes, em fotos mensais de 2023 a 2026, sem nenhuma ação especial.</p>
     </div>
@@ -527,7 +679,7 @@ Agende pelo WhatsApp [número]</div>
   <!-- =============================== CASHBACK =============================== -->
   <section aria-labelledby="t-cash">
     <div class="sec-head">
-      <span class="eyebrow">5 · Cashback</span>
+      <span class="eyebrow">6 · Cashback</span>
       <h2 id="t-cash">Cashback na reavaliação de 30 dias</h2>
       <p class="note">O Belle não registra cashback hoje, então estas regras são uma proposta montada sobre os prazos medidos. Os valores precisam ser validados pela gestão antes de virar regra.</p>
     </div>
@@ -539,7 +691,7 @@ Agende pelo WhatsApp [número]</div>
           <li><b>Validade:</b> até D+60. A 2ª compra sai em 33 dias (mediana) e 39% das clientes compram de novo até o 60º dia; depois disso a chance cai.</li>
           <li><b>Uso:</b> só em procedimento de upgrade (valor por sessão acima da drenagem; lista na etapa da 2ª compra). Não vale para drenagem, renovação do mesmo plano nem junto com a condição de aquisição.</li>
           <li><b>Valor sugerido:</b> 10% do primeiro plano, com teto de R$ 300. Assim o desconto é pago pela margem da 2ª compra, como pede a estratégia do anual.</li>
-          <li><b>Registro:</b> anotar no CRM a data da entrega e o valor, para medir quantos cashbacks viram 2ª compra.</li>
+          <li><b>Registro:</b> anotar no APP a data da entrega e o valor, para medir quantos cashbacks viram 2ª compra.</li>
           <li><b>Exceções:</b> valor acima da regra só com autorização da Head de Vendas, como nos acordos fora do padrão (POP 06).</li>
         </ul>
       </div>
@@ -559,7 +711,7 @@ Posso deixar reservado o seu horário para começarmos o [protocolo]?</div>
   <!-- =============================== PODER DE COMPRA =============================== -->
   <section aria-labelledby="t-poder">
     <div class="sec-head">
-      <span class="eyebrow">6 · Poder de compra</span>
+      <span class="eyebrow">7 · Poder de compra</span>
       <h2 id="t-poder">Quais clientes dão mais retorno</h2>
       <p class="note">Gasto em planos nos últimos 24 meses, das 3.788 clientes que compraram plano no período.</p>
     </div>
@@ -604,7 +756,7 @@ Posso deixar reservado o seu horário para começarmos o [protocolo]?</div>
   <!-- =============================== MENSAGENS =============================== -->
   <section aria-labelledby="t-msg">
     <div class="sec-head">
-      <span class="eyebrow">7 · Cadências do Lever</span>
+      <span class="eyebrow">8 · Cadências do Lever</span>
       <h2 id="t-msg">Como escrever as mensagens automáticas</h2>
       <p class="note">Análise das 25 sequências com envio no Lever (64.403 mensagens, dados de 20/10/2026). Taxa de resposta média: 9,1%. Faixas: forte a partir de 15%, crítico abaixo de 7%.</p>
     </div>
@@ -651,7 +803,7 @@ Posso deixar reservado o seu horário para começarmos o [protocolo]?</div>
   <!-- =============================== KPIs =============================== -->
   <section aria-labelledby="t-kpi">
     <div class="sec-head">
-      <span class="eyebrow">8 · Acompanhamento</span>
+      <span class="eyebrow">9 · Acompanhamento</span>
       <h2 id="t-kpi">Os números que mostram se a jornada está funcionando</h2>
     </div>
     <div class="tbl">
@@ -659,8 +811,11 @@ Posso deixar reservado o seu horário para começarmos o [protocolo]?</div>
         <thead><tr><th>Indicador</th><th>Como medir</th><th class="n">Referência atual</th></tr></thead>
         <tbody>
           <tr><td>Comparecimento à avaliação</td><td>Atendidas ÷ (atendidas + faltas)</td><td class="n">55,5%</td></tr>
+          <tr><td>Nutrium antes da avaliação</td><td>Questionários prontos quando a Sênior chama ÷ avaliações atendidas</td><td class="n">a medir</td></tr>
+          <tr><td>Ticket médio da venda</td><td>Valor dos planos vendidos no dia ÷ vendas, por Sênior, Supervisora Comercial e unidade</td><td class="n">a medir</td></tr>
+          <tr><td>Passagem de bastão</td><td>Cards com o resumo da SDR na véspera e com a proposta registrada na saída</td><td class="n">a medir</td></tr>
           <tr><td>Ligação de confirmação feita</td><td>Avaliações confirmadas por ligação ÷ avaliações agendadas</td><td class="n">a medir</td></tr>
-          <tr><td>Fechamento no dia da avaliação</td><td>Avaliações atendidas com plano comprado no dia</td><td class="n">32,0%</td></tr>
+          <tr><td>Fechamento no dia da avaliação</td><td>Avaliações atendidas com plano comprado no dia, por Sênior, Supervisora Comercial e unidade</td><td class="n">32,0%</td></tr>
           <tr><td>Reavaliação feita em até 60 dias</td><td>Clientes novas com acompanhamento entre D+14 e D+60</td><td class="n">28% (1.395 de 5.061)</td></tr>
           <tr><td>2ª compra em até 60 dias</td><td>Clientes novas com novo plano até D+60</td><td class="n">39%</td></tr>
           <tr><td>NPS comercial</td><td>% de promotoras (9 e 10) menos % de detratoras (0 a 6), somando ligações e NPS por WhatsApp, e % de clientes que atenderam a ligação. Acompanhar também o motivo mais citado na P3</td><td class="n">a medir</td></tr>
