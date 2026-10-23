@@ -154,7 +154,7 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
           <thead><tr><th>Etapa</th><th>Quem conduz</th><th>Quem apoia</th></tr></thead>
           <tbody>
               <tr><td>Primeiro contato, agendamento e confirmação</td><td><b>SDR</b></td><td>—</td></tr>
-              <tr><td>Chegada e questionário do Nutrium</td><td><b>Recepção</b></td><td>—</td></tr>
+              <tr><td>Chegada e questionário do Nutrium</td><td><b>Recepção</b></td><td>SDR manda o questionário na véspera</td></tr>
               <tr><td>Avaliação e plano</td><td><b>Supervisora Sênior</b></td><td>—</td></tr>
               <tr><td>Sessão na cabine (isca ou tratamento)</td><td><b>Esteticista</b></td><td>Supervisora Comercial, conversa de até 15 min</td></tr>
               <tr><td>Sala de fechamento</td><td><b>Sênior ou Supervisora Comercial</b></td><td>Head de Vendas, nas exceções</td></tr>
@@ -235,8 +235,8 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
           <h3>Ligar na véspera para confirmar</h3>
           <ul>
             <li>Automático (cadência "Pré AV SDR 7853", 34,3% de resposta): a confirmação 2h depois de agendar (33,3%) continua igual. O vídeo da Aisi responde menos (21,3%).</li>
-            <li>Véspera, no bloco das 17h30: em vez de mandar a mensagem de confirmação, a SDR <b>liga</b> para cada avaliação do dia seguinte. Confirma data, horário e unidade e tira na hora as dúvidas de como chegar. Depois da ligação, manda a localização pelo WhatsApp.</li>
-            <li>Não atendeu: enviar a confirmação e o endereço pelo WhatsApp.</li>
+            <li>Véspera, no bloco das 17h30: em vez de mandar a mensagem de confirmação, a SDR <b>liga</b> para cada avaliação do dia seguinte. Confirma data, horário e unidade e tira na hora as dúvidas de como chegar. Depois da ligação, manda pelo WhatsApp a localização e o link do <b>questionário do Nutrium</b>, para a cliente chegar com ele preenchido e a Sênior ter mais tempo para preparar o plano.</li>
+            <li>Não atendeu: enviar a confirmação, o endereço e o questionário do Nutrium pelo WhatsApp.</li>
             <li>No dia, se ela já confirmou, não pedir "SIM" de novo.</li>
             <li>Depois da ligação, deixar no card o resumo da <b>passagem de bastão</b> (seção 2): queixa principal nas palavras dela, potencial, isca agendada, o que já foi falado sobre valor e a objeção que apareceu.</li>
           </ul>
@@ -246,8 +246,12 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; border
 3. Como chegar: "Você sabe chegar lá? Fica na [endereço], [ponto de referência]. Vou te mandar a localização aqui no WhatsApp."
 4. O que esperar: "A especialista vai olhar com calma o que te incomoda em [queixa] e, no mesmo horário, você já faz a [isca] pra sentir o resultado."
 5. Se precisar remarcar: "Sem problema! Tenho [horário 1] ou [horário 2]. Qual fica melhor pra você?" Remarcar durante a ligação.
-6. Fechamento: "Então está confirmado! Qualquer dúvida, é só me chamar aqui no WhatsApp. Até amanhã, [nome]!"</div>
-          <div class="scripts"><span class="chip">UTILIDADE PRE AV 1</span><span class="chip">UTILIDADE PRE AV 2</span></div>
+6. Fechamento: "Confirmado! Vou te mandar a localização e um questionário rapidinho pra você preencher antes de vir. Assim a especialista já te recebe sabendo do que você precisa. Até amanhã, [nome]!"</div>
+          <div class="scripts"><span class="chip">UTILIDADE PRE AV 1</span><span class="chip">UTILIDADE PRE AV 2</span><span class="chip">nova: Questionário Nutrium</span></div>
+          <div class="draft"><b>Nova resposta rápida: Questionário Nutrium</b>
+Oi, [nome]! Como combinamos, aqui está o questionário da sua avaliação de amanhã: [link do Nutrium]
+É rapidinho e ajuda a especialista a te receber já sabendo do que você precisa 💖</div>
+          <p class="note">Antes de começar, confirmar se o Nutrium permite enviar o questionário por link. Se não permitir, a recepção aplica na chegada, como hoje.</p>
           <p class="note">Se não atender a ligação:</p>
           <div class="scripts"><span class="chip">Confirmação Avaliação 1 Dia Antes</span><span class="chip">Confirmação novo</span><span class="chip">Endereço (da unidade)</span></div>
           <div class="data"><span>Comparecimento à avaliação em 2026: <b>55,5%</b>, perto da meta do POP (50%). Quase metade das avaliações não acontece.</span></div>
@@ -380,7 +384,7 @@ Ainda faz sentido cuidar de você? Tenho horários pra hoje ou amanhã. Qual voc
       <table>
         <thead><tr><th>Momento</th><th>Quem</th><th>O que acontece</th></tr></thead>
         <tbody>
-          <tr><td>1 · Chegada</td><td>Recepção</td><td>Acolhe a cliente e aplica o questionário do Nutrium antes de a Sênior chamar.</td></tr>
+          <tr><td>1 · Chegada</td><td>Recepção</td><td>Acolhe a cliente e confere o questionário do Nutrium que a SDR mandou na véspera; se não veio preenchido, aplica antes de a Sênior chamar.</td></tr>
           <tr><td>2 · Avaliação</td><td>Supervisora Sênior</td><td>Diagnóstico, plano de ação e primeira oferta.</td></tr>
           <tr><td>3 · Cabine</td><td>Esteticista e Supervisora Comercial</td><td>Sessão da isca ou do tratamento; a Supervisora Comercial conversa por até 15 minutos.</td></tr>
           <tr><td>4 · Sala</td><td>Sênior ou Supervisora Comercial</td><td>Fechamento com a escada de negociação.</td></tr>
@@ -407,8 +411,8 @@ Ainda faz sentido cuidar de você? Tenho horários pra hoje ou amanhã. Qual voc
         <h3>Na chegada</h3>
         <ul>
           <li>Acolher a cliente pelo nome.</li>
-          <li>Aplicar o questionário do Nutrium antes de a Sênior chamar: motivação, expectativas, objetivos e histórico.</li>
-          <li>Se o Nutrium permitir, mandar o questionário junto com a ligação de confirmação, para ela chegar com tudo preenchido.</li>
+          <li>Conferir o questionário do Nutrium (motivação, expectativas, objetivos e histórico), que a SDR mandou pelo WhatsApp depois da ligação de confirmação.</li>
+          <li>Não veio preenchido: aplicar antes de a Sênior chamar.</li>
           <li>Avisar quem vai atender que a cliente chegou: a Sênior (avaliação) ou a Supervisora Comercial (sessão).</li>
         </ul>
       </div>
