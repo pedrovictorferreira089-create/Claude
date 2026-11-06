@@ -202,10 +202,11 @@ def montar(dia, corte=None, teto=None, hoje=None):
             hora=a["horarioAgendamento"], tipo=a["tipoAgendamento"], servico=(a["nomeServico"] or "").strip(),
             unidade=a["unidade"], status=a["statusAgendamento"], mesmoDia=data_br(a["dataAgendamento"]) == dia))
 
-    # quem agendou cada cliente: prioridade ao agendamento do próprio dia, senão o mais recente
+    # quem agendou cada cliente: prioridade ao agendamento do próprio dia, senão o mais recente.
+    # Desmarcados e cancelados não contam: uma série recorrente cancelada não diz quem trouxe a cliente.
     dono_cliente = {}
     for a in sorted(antes + depois, key=lambda x: (data_br(x["dataAgendamento"]) == dia, x["idAgendamento"])):
-        if dona(a):
+        if dona(a) and not any(x in str(a["statusAgendamento"]).lower() for x in FORA):
             dono_cliente[str(a["codigoCliente"])] = dona(a)
     for v in vendas:
         nome = dono_cliente.get(str(v["cod_cliente"]))
