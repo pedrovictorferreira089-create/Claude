@@ -39,9 +39,10 @@ EQUIPE = {
     "Juliane Hemilly Salvador Rodrigues": "Juliane",
     "Bruna Letícia do Nascimento Silva": "Bruna",
     "Samilly Rohany Câmara Silva": "Samilly",
+    "Anna Maria Baptista da Silva": "Anna",
 }
 # Primeiro nome do responsável no Lever -> nome no placar
-EQUIPE_LEVER = {"juliane": "Juliane", "julliane": "Juliane", "bruna": "Bruna", "samilly": "Samilly"}
+EQUIPE_LEVER = {"juliane": "Juliane", "julliane": "Juliane", "bruna": "Bruna", "samilly": "Samilly", "anna": "Anna"}
 LEVER = "https://api.app.leverconversas.com.br/"
 LEVER_TOKEN = os.environ.get("LEVER_TOKEN", "")  # sem ele, o proxy do ambiente injeta a credencial
 PAINEIS = {"929d58b8-2650-4993-9deb-b7aaa6481b3b": "SDR", "8132810d-57ae-48e6-853e-eb3abcf13d2c": "Social Selling",
