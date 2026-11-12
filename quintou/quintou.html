@@ -448,7 +448,7 @@ function renderPlacar() {
       <div style="display:grid;gap:6px">
         <div class="line"><span>Próxima roleta</span><span class="num muted">faltam ${falta} de ${c.r.bloco}</span></div>
         <div class="dots" aria-label="${resto} de ${c.r.bloco} agendamentos para a próxima roleta">${doBloco}</div>
-        <div class="line"><span>Giro extra do encaixe</span><span class="num muted">${Math.min(c.M - c.encaixe * c.r.mesmoDia, c.r.mesmoDia)} de ${c.r.mesmoDia} para hoje mesmo</span></div>
+        <div class="line"><span>Giro extra do encaixe</span><span class="num muted">${Math.min(c.M - c.encaixe * c.r.mesmoDia, c.r.mesmoDia)} de ${c.r.mesmoDia} para hoje mesmo${c.M - c.encaixe * c.r.mesmoDia >= c.r.mesmoDia ? ` · garantido, sai no ${(c.blocos + 1) * c.r.bloco}º agendamento` : ""}</span></div>
         <div class="line muted"><span>Giros: ${c.blocos} por agendamentos · ${c.encaixe} por encaixe · ${c.ticket} por venda</span></div>
       </div>
       <div style="display:grid;gap:6px">
