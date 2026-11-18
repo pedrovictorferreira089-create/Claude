@@ -186,7 +186,7 @@ table.premios td:first-child input { min-width: 180px; }
       <p>Toda quinta: mais agendamentos, encaixes no mesmo dia e vendas de ticket alto. Cada meta batida vale um giro na roleta.</p>
     </div>
     <div class="daybox">
-      <label for="day">Quinta-feira</label>
+      <label for="day">Dia do Quintou</label>
       <select id="day" aria-label="Escolher a quinta-feira"></select>
       <div class="status" id="status"></div>
     </div>
@@ -378,15 +378,21 @@ function vendedora(v) {
 }
 
 /* ---------- topo ---------- */
+/* Quinta é dia de Quintou, salvo quando a semana já teve o seu em outro dia (os últimos 6 dias têm leitura real). */
+function quintaEsperada(hoje) {
+  if (diaSemana(hoje) !== 4) return false;
+  const ini = new Date(new Date(hoje + "T12:00:00Z") - 6 * 864e5).toISOString().slice(0, 10);
+  return !Object.keys(S.dias).some((d) => d >= ini && d < hoje && !S.dias[d]?.simulacao);
+}
 function listaDias() {
   const hoje = hojeNatal();
   const set = new Set(Object.keys(S.dias));
-  if (diaSemana(hoje) === 4) set.add(hoje);
+  if (quintaEsperada(hoje)) set.add(hoje);
   return [...set].sort().reverse();
 }
 function diaPadrao() {
   const hoje = hojeNatal(), dias = listaDias();
-  if (diaSemana(hoje) === 4) return hoje;
+  if (S.dias[hoje] || quintaEsperada(hoje)) return hoje;
   return dias.find((d) => d <= hoje && !S.dias[d]?.simulacao) || dias.find((d) => d <= hoje) || dias[0] || hoje;
 }
 function renderDias() {
