@@ -17,5 +17,8 @@ c.push(center("*Application of the DMAIC method to reduce failures in kit prepar
 c.push(p("**Abstract:** *This paper applies the DMAIC method to the service kit preparation process of a pyrotechnic event services micro-enterprise located in Natal, Brazil, where items were forgotten in about 15% of events and each kit took, on average, 55 minutes to prepare. Through a case study, the Project Charter, SIPOC, SERVQUAL, Pareto chart, Ishikawa diagram, 5 Whys, FMEA and the 5W2H action plan were applied. The results identified reliability as the most critical service dimension, three causes accounting for 80.5% of failures, and the lack of standardized work as the root cause. The FMEA prioritized the definition of the materials list (RPN 392) and revealed high-severity risks not captured by frequency analyses. The proposed improvements and control plan are expected to reduce the share of events with failures to less than 5% and the annual cost of failures by about 62%.*"));
 c.push(p("**Keywords:** *DMAIC; FMEA; Service quality; Micro-enterprise; Pyrotechnic services.*"));
 
+module.exports = c;
+if (require.main === module) {
 const doc = new D.Document({ creator: "", title: "", description: "", lastModifiedBy: "", styles, numbering, sections: [section(c)] });
 save(doc, out).then(() => console.log("ok", out));
+}

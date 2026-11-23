@@ -224,8 +224,11 @@ refs.forEach((r, i) => {
   if (i < refs.length - 1) add(new D.Paragraph({ children: [new D.TextRun({ text: "", size: 20 })], spacing: { line: L.LINE, lineRule: D.LineRuleType.AUTO, before: 0, after: 0 } }));
 });
 
+module.exports = c;
+if (require.main === module) {
 const doc = new D.Document({
   creator: "", title: "", description: "", lastModifiedBy: "",
   styles, numbering, sections: [section(c)],
 });
 save(doc, out).then(() => console.log("ok", out));
+}
